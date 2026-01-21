@@ -1,0 +1,154 @@
+
+import React, { useState, useEffect, useRef } from 'react';
+import Layout from './components/Layout';
+import Dashboard from './components/Dashboard';
+import PopulationManagement from './components/PopulationManagement';
+import RecapIndicators from './components/RecapIndicators';
+import AppSettings from './components/AppSettings';
+import ArchivedResidents from './components/ArchivedResidents';
+import BirthManagement from './components/BirthManagement';
+import { Resident, AppConfig } from './types';
+import { initialResidents } from './mockData';
+import { initializeApp, getApp, getApps } from 'firebase/app';
+import { getFirestore, doc, setDoc, onSnapshot, collection, writeBatch } from 'firebase/firestore';
+
+const App: React.FC = () => {
+  const [residents, setResidents] = useState<Resident[]>(() => {
+    const saved = localStorage.getItem('siga_residents');
+    if (saved) {
+      try {
+        return JSON.parse(saved);
+      } catch (e) {
+        return initialResidents;
+      }
+    }
+    return initialResidents;
+  });
+
+  const [config, setConfig] = useState<AppConfig>(() => {
+    const saved = localStorage.getItem('siga_config');
+    if (saved) {
+      try {
+        return JSON.parse(saved);
+      } catch (e) {
+        return {
+          appName: 'SIGA Ngumbul',
+          subtitle: 'Kec. Todanan, Kab. Blora',
+          logoUrl: 'https://upload.wikimedia.org/wikipedia/commons/1/1d/Lambang_Kabupaten_Blora.png',
+          operatorName: 'ADMIN DESA',
+          villageHeadName: 'SULARNO',
+          firebaseConfig: { enabled: false }
+        } as AppConfig;
+      }
+    }
+    return {
+      appName: 'SIGA Ngumbul',
+      subtitle: 'Kec. Todanan, Kab. Blora',
+      logoUrl: 'https://upload.wikimedia.org/wikipedia/commons/1/1d/Lambang_Kabupaten_Blora.png',
+      operatorName: 'ADMIN DESA',
+      villageHeadName: 'SULARNO',
+      firebaseConfig: { enabled: false }
+    };
+  });
+
+  const [activeTab, setActiveTab] = useState('dashboard');
+  const [isSyncing, setIsSyncing] = useState(false);
+  const isRemoteUpdate = useRef(false);
+
+  // Initialize Firebase and Handle Real-time Sync
+  useEffect(() => {
+    if (!config.firebaseConfig?.enabled || !config.firebaseConfig.projectId) return;
+
+    try {
+      const firebaseApp = getApps().length === 0 ? initializeApp({
+        apiKey: config.firebaseConfig.apiKey,
+        authDomain: config.firebaseConfig.authDomain,
+        projectId: config.firebaseConfig.projectId,
+        storageBucket: config.firebaseConfig.storageBucket,
+        messagingSenderId: config.firebaseConfig.messagingSenderId,
+        appId: config.firebaseConfig.appId
+      }) : getApp();
+
+      const db = getFirestore(firebaseApp);
+      
+      // Listen to Remote Changes
+      const unsubscribe = onSnapshot(doc(db, "ngumbul_data", "residents_master"), (docSnap) => {
+        if (docSnap.exists()) {
+          const remoteData = docSnap.data().list || [];
+          isRemoteUpdate.current = true;
+          setResidents(remoteData);
+          localStorage.setItem('siga_residents', JSON.stringify(remoteData));
+          setTimeout(() => { isRemoteUpdate.current = false; }, 500);
+        }
+      });
+
+      return () => unsubscribe();
+    } catch (error) {
+      console.error("Firebase Sync Error:", error);
+    }
+  }, [config.firebaseConfig?.enabled, config.firebaseConfig?.projectId]);
+
+  // Sync Local Changes to Remote
+  useEffect(() => {
+    localStorage.setItem('siga_residents', JSON.stringify(residents));
+    
+    if (config.firebaseConfig?.enabled && config.firebaseConfig.projectId && !isRemoteUpdate.current) {
+      const syncToCloud = async () => {
+        setIsSyncing(true);
+        try {
+          const firebaseApp = getApp();
+          const db = getFirestore(firebaseApp);
+          await setDoc(doc(db, "ngumbul_data", "residents_master"), { 
+            list: residents,
+            lastUpdated: new Date().toISOString(),
+            updatedBy: config.operatorName
+          });
+        } catch (e) {
+          console.error("Gagal sinkron ke cloud:", e);
+        } finally {
+          setTimeout(() => setIsSyncing(false), 1000);
+        }
+      };
+      
+      const debounceTimer = setTimeout(syncToCloud, 2000);
+      return () => clearTimeout(debounceTimer);
+    }
+  }, [residents]);
+
+  useEffect(() => {
+    localStorage.setItem('siga_config', JSON.stringify(config));
+  }, [config]);
+
+  const renderContent = () => {
+    switch (activeTab) {
+      case 'dashboard':
+        return <Dashboard residents={residents.filter(r => r.status === 'Aktif')} />;
+      case 'penduduk':
+        return <PopulationManagement residents={residents} setResidents={setResidents} config={config} />;
+      case 'kelahiran':
+        return <BirthManagement residents={residents} setResidents={setResidents} />;
+      case 'arsip':
+        return <ArchivedResidents residents={residents} setResidents={setResidents} />;
+      case 'rekap':
+        return <RecapIndicators residents={residents.filter(r => r.status === 'Aktif')} config={config} />;
+      case 'profil':
+        return <AppSettings config={config} setConfig={setConfig} />;
+      default:
+        return <Dashboard residents={residents.filter(r => r.status === 'Aktif')} />;
+    }
+  };
+
+  return (
+    <Layout activeTab={activeTab} setActiveTab={setActiveTab} config={config}>
+      {isSyncing && (
+        <div className="fixed bottom-4 right-4 z-[999] bg-emerald-600 text-white px-5 py-2.5 rounded-2xl text-[10px] font-black uppercase flex items-center space-x-3 shadow-2xl animate-in fade-in slide-in-from-bottom-4">
+          <div className="w-2 h-2 bg-white rounded-full animate-ping"></div>
+          <span>Cloud Sync Active...</span>
+        </div>
+      )}
+      {renderContent()}
+    </Layout>
+  );
+};
+
+export default App;
