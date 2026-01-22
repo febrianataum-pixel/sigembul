@@ -11,7 +11,10 @@ import {
   Archive,
   Baby,
   PanelLeftClose,
-  PanelLeftOpen
+  PanelLeftOpen,
+  Cloud,
+  CloudOff,
+  RefreshCcw
 } from 'lucide-react';
 import { AppConfig } from '../types';
 
@@ -20,9 +23,10 @@ interface LayoutProps {
   activeTab: string;
   setActiveTab: (tab: string) => void;
   config: AppConfig;
+  isSyncing?: boolean;
 }
 
-const Layout: React.FC<LayoutProps> = ({ children, activeTab, setActiveTab, config }) => {
+const Layout: React.FC<LayoutProps> = ({ children, activeTab, setActiveTab, config, isSyncing }) => {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
 
@@ -89,7 +93,7 @@ const Layout: React.FC<LayoutProps> = ({ children, activeTab, setActiveTab, conf
             }`}
           >
             {isSidebarCollapsed ? <PanelLeftOpen size={20} /> : <PanelLeftClose size={20} />}
-            {!isSidebarCollapsed && <span>Sembunyikan</span>}
+            {!isSidebarCollapsed && <span className="font-bold text-sm">Sembunyikan</span>}
           </button>
           <div className="mt-4 pt-4 border-t border-slate-800/50 text-center">
              <p className={`text-[10px] font-bold text-slate-600 ${isSidebarCollapsed ? 'hidden' : 'block'}`}>OneNine Studio | 2026</p>
@@ -111,7 +115,27 @@ const Layout: React.FC<LayoutProps> = ({ children, activeTab, setActiveTab, conf
               {menuItems.find(i => i.id === activeTab)?.label}
             </h2>
           </div>
-          <div className="flex items-center">
+          <div className="flex items-center space-x-2 md:space-x-4">
+             {/* Cloud Sync Status Indicator */}
+             <div className={`hidden sm:flex items-center space-x-2 px-3 py-1.5 rounded-full border transition-all ${
+               config.firebaseConfig?.enabled 
+                 ? 'bg-emerald-50 border-emerald-100 text-emerald-600' 
+                 : 'bg-slate-50 border-slate-100 text-slate-400'
+             }`}>
+                {config.firebaseConfig?.enabled ? (
+                  isSyncing ? (
+                    <RefreshCcw size={12} className="animate-spin" />
+                  ) : (
+                    <Cloud size={12} />
+                  )
+                ) : (
+                  <CloudOff size={12} />
+                )}
+                <span className="text-[9px] font-black uppercase tracking-widest whitespace-nowrap">
+                  {config.firebaseConfig?.enabled ? (isSyncing ? 'Sinkronisasi...' : 'Cloud Aktif') : 'Mode Lokal'}
+                </span>
+             </div>
+
              <div className="flex items-center space-x-2 bg-slate-100 px-2.5 py-1 rounded-full border border-slate-200">
                 <span className="text-[8px] md:text-xs font-black text-slate-700 uppercase tracking-tight max-w-[60px] md:max-w-none truncate">
                   {config.operatorName || 'OPERATOR'}

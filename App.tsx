@@ -139,13 +139,7 @@ const App: React.FC = () => {
   };
 
   return (
-    <Layout activeTab={activeTab} setActiveTab={setActiveTab} config={config}>
-      {isSyncing && (
-        <div className="fixed bottom-4 right-4 z-[999] bg-emerald-600 text-white px-5 py-2.5 rounded-2xl text-[10px] font-black uppercase flex items-center space-x-3 shadow-2xl animate-in fade-in slide-in-from-bottom-4">
-          <div className="w-2 h-2 bg-white rounded-full animate-ping"></div>
-          <span>Cloud Sync Active...</span>
-        </div>
-      )}
+    <Layout activeTab={activeTab} setActiveTab={setActiveTab} config={config} isSyncing={isSyncing}>
       {renderContent()}
     </Layout>
   );
