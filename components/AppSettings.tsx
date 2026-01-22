@@ -1,6 +1,6 @@
 
 import React, { useState } from 'react';
-import { Save, Globe, RefreshCcw, User, Shield, Info, Image as ImageIcon, Server, Cloud, Database } from 'lucide-react';
+import { Save, Globe, RefreshCcw, User, Shield, Info, Image as ImageIcon, Server, Cloud, Database, Wifi, WifiOff } from 'lucide-react';
 import { AppConfig } from '../types';
 
 interface AppSettingsProps {
@@ -15,6 +15,18 @@ const AppSettings: React.FC<AppSettingsProps> = ({ config, setConfig }) => {
   const handleSave = (e: React.FormEvent) => {
     e.preventDefault();
     setConfig(formData);
+    setIsSaved(true);
+    setTimeout(() => setIsSaved(false), 3000);
+  };
+
+  const handleUpdateFirebase = () => {
+    // Jika user mengklik update tapi enabled masih false, kita paksa true jika projectId ada
+    const newConfig = { ...formData };
+    if (newConfig.firebaseConfig && newConfig.firebaseConfig.projectId && !newConfig.firebaseConfig.enabled) {
+      newConfig.firebaseConfig.enabled = true;
+      setFormData(newConfig);
+    }
+    setConfig(newConfig);
     setIsSaved(true);
     setTimeout(() => setIsSaved(false), 3000);
   };
@@ -85,60 +97,71 @@ const AppSettings: React.FC<AppSettingsProps> = ({ config, setConfig }) => {
       <div className="bg-slate-900 rounded-[2.5rem] border border-slate-800 overflow-hidden shadow-2xl text-white">
         <div className="p-6 border-b border-white/10 flex items-center justify-between">
           <div className="flex items-center space-x-3">
-             <Cloud size={18} className="text-blue-400" />
+             <Cloud size={18} className={`${formData.firebaseConfig?.enabled ? 'text-emerald-400' : 'text-blue-400'}`} />
              <h2 className="text-sm font-black uppercase tracking-widest">Firebase Realtime Sync</h2>
           </div>
-          <div className="flex items-center space-x-2">
-             <span className="text-[8px] font-black uppercase tracking-tighter">Status Sync:</span>
+          <div className="flex items-center space-x-3">
+             <span className={`text-[8px] font-black uppercase tracking-tighter ${formData.firebaseConfig?.enabled ? 'text-emerald-400' : 'text-slate-500'}`}>
+                {formData.firebaseConfig?.enabled ? 'Cloud Aktif' : 'Off'}
+             </span>
              <button 
                onClick={() => updateFirebase('enabled', !formData.firebaseConfig?.enabled)}
-               className={`w-10 h-5 rounded-full transition-all relative ${formData.firebaseConfig?.enabled ? 'bg-emerald-500' : 'bg-slate-700'}`}
+               className={`w-12 h-6 rounded-full transition-all relative ${formData.firebaseConfig?.enabled ? 'bg-emerald-500' : 'bg-slate-700'}`}
              >
-                <div className={`absolute top-1 w-3 h-3 bg-white rounded-full transition-all ${formData.firebaseConfig?.enabled ? 'left-6' : 'left-1'}`}></div>
+                <div className={`absolute top-1 w-4 h-4 bg-white rounded-full transition-all shadow-md ${formData.firebaseConfig?.enabled ? 'left-7' : 'left-1'}`}></div>
              </button>
           </div>
         </div>
 
         <div className="p-8 space-y-5">
-           <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest mb-4">Konfigurasi Cloud Firestore untuk penyimpanan data terpusat secara real-time.</p>
+           <div className="bg-white/5 border border-white/10 p-4 rounded-2xl mb-4">
+              <div className="flex items-center space-x-3 mb-2">
+                 {formData.firebaseConfig?.enabled ? <Wifi size={14} className="text-emerald-400" /> : <WifiOff size={14} className="text-rose-400" />}
+                 <p className="text-[10px] font-black uppercase tracking-widest">
+                   Status Koneksi: {formData.firebaseConfig?.enabled ? 'SIAP SINKRON' : 'LOKAL SAJA'}
+                 </p>
+              </div>
+              <p className="text-[9px] text-slate-500 font-bold leading-relaxed">Pastikan Switch di atas berwarna HIJAU untuk mengaktifkan sinkronisasi Cloud Firestore.</p>
+           </div>
            
            <div className="space-y-4">
               <div>
                 <label className="text-[8px] font-black text-slate-500 uppercase tracking-widest block mb-1">Project ID</label>
-                <input type="text" className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-2.5 text-xs font-mono" value={formData.firebaseConfig?.projectId || ''} onChange={(e) => updateFirebase('projectId', e.target.value)} placeholder="my-project-id" />
+                <input type="text" className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-2.5 text-xs font-mono focus:bg-white/10 outline-none focus:border-blue-500 transition-all" value={formData.firebaseConfig?.projectId || ''} onChange={(e) => updateFirebase('projectId', e.target.value)} placeholder="my-project-id" />
               </div>
               <div>
                 <label className="text-[8px] font-black text-slate-500 uppercase tracking-widest block mb-1">API Key</label>
-                <input type="password" name="apiKey" className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-2.5 text-xs font-mono" value={formData.firebaseConfig?.apiKey || ''} onChange={(e) => updateFirebase('apiKey', e.target.value)} placeholder="AIzaSy..." />
+                <input type="password" name="apiKey" className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-2.5 text-xs font-mono focus:bg-white/10 outline-none focus:border-blue-500 transition-all" value={formData.firebaseConfig?.apiKey || ''} onChange={(e) => updateFirebase('apiKey', e.target.value)} placeholder="AIzaSy..." />
               </div>
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <label className="text-[8px] font-black text-slate-500 uppercase tracking-widest block mb-1">Auth Domain</label>
-                  <input type="text" className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-2.5 text-xs font-mono" value={formData.firebaseConfig?.authDomain || ''} onChange={(e) => updateFirebase('authDomain', e.target.value)} />
+                  <input type="text" className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-2.5 text-xs font-mono focus:bg-white/10 outline-none focus:border-blue-500 transition-all" value={formData.firebaseConfig?.authDomain || ''} onChange={(e) => updateFirebase('authDomain', e.target.value)} />
                 </div>
                 <div>
                   <label className="text-[8px] font-black text-slate-500 uppercase tracking-widest block mb-1">App ID</label>
-                  <input type="text" className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-2.5 text-xs font-mono" value={formData.firebaseConfig?.appId || ''} onChange={(e) => updateFirebase('appId', e.target.value)} />
+                  <input type="text" className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-2.5 text-xs font-mono focus:bg-white/10 outline-none focus:border-blue-500 transition-all" value={formData.firebaseConfig?.appId || ''} onChange={(e) => updateFirebase('appId', e.target.value)} />
                 </div>
               </div>
            </div>
 
-           <div className="mt-8 p-4 bg-white/5 border border-white/10 rounded-2xl">
+           <div className="mt-4 p-4 bg-amber-500/10 border border-amber-500/20 rounded-2xl">
               <div className="flex items-start space-x-3">
-                 <Database size={16} className="text-amber-500 mt-1" />
-                 <p className="text-[9px] text-slate-400 font-bold uppercase tracking-widest leading-relaxed">Pastikan Security Rules di Firestore diset ke true untuk testing, atau gunakan Firebase Auth untuk keamanan produksi.</p>
+                 <Database size={16} className="text-amber-500 mt-1 shrink-0" />
+                 <p className="text-[9px] text-amber-200/70 font-bold uppercase tracking-widest leading-relaxed">Jangan lupa aktifkan Firestore Database di konsol Firebase Anda sebelum menghubungkan.</p>
               </div>
            </div>
 
-           <button onClick={handleSave} className="w-full py-4 bg-blue-600 text-white rounded-2xl text-[10px] font-black uppercase tracking-widest shadow-xl transition-all hover:bg-blue-500 mt-4">
-             Update Konfigurasi API
+           <button onClick={handleUpdateFirebase} className="w-full py-4 bg-blue-600 text-white rounded-2xl text-[10px] font-black uppercase tracking-widest shadow-xl transition-all hover:bg-blue-500 active:scale-95 flex items-center justify-center space-x-2">
+             <RefreshCcw size={16} className={isSaved ? "animate-spin" : ""} />
+             <span>Update Konfigurasi Cloud</span>
            </button>
         </div>
       </div>
 
       {isSaved && (
-        <div className="fixed top-20 left-1/2 -translate-x-1/2 z-[100] bg-emerald-600 text-white px-8 py-4 rounded-2xl text-[10px] font-black uppercase shadow-2xl animate-in slide-in-from-top">
-           Pengaturan Berhasil Disimpan & Sinkron!
+        <div className="fixed bottom-24 left-1/2 -translate-x-1/2 z-[100] bg-emerald-600 text-white px-8 py-4 rounded-2xl text-[10px] font-black uppercase shadow-2xl animate-in slide-in-from-bottom">
+           Pengaturan Cloud Diperbarui!
         </div>
       )}
     </div>
