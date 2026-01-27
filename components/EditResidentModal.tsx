@@ -1,6 +1,6 @@
 
 import React, { useState } from 'react';
-import { X, Save, User, AlertCircle } from 'lucide-react';
+import { X, Save, User, AlertCircle, HeartPulse } from 'lucide-react';
 import { Resident } from '../types';
 
 interface EditResidentModalProps {
@@ -20,11 +20,12 @@ const EditResidentModal: React.FC<EditResidentModalProps> = ({ resident, onClose
   };
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
-    const { name, value } = e.target;
+    const { name, value, type } = e.target as any;
     let finalValue = value;
     
-    // Validasi NIK/KK agar hanya angka dan maksimal 16 digit
-    if (name === 'nik' || name === 'noKK') {
+    if (type === 'checkbox') {
+      finalValue = (e.target as HTMLInputElement).checked;
+    } else if (name === 'nik' || name === 'noKK') {
       finalValue = value.replace(/\D/g, '').slice(0, 16);
     }
     
@@ -58,6 +59,8 @@ const EditResidentModal: React.FC<EditResidentModalProps> = ({ resident, onClose
     "38. Tukang Listrik", "39. Wirausahawan/Wiraswasta", "40. Perangkat Desa", 
     "41. Lainnya (jika pekerjaan tidak tercantum)"
   ];
+
+  const isFemale = formData.gender.includes('Perempuan');
 
   return (
     <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in duration-200">
@@ -178,6 +181,47 @@ const EditResidentModal: React.FC<EditResidentModalProps> = ({ resident, onClose
               </div>
             </div>
           </div>
+
+          {/* Pregnancy Section */}
+          {isFemale && (
+            <div className="space-y-6">
+              <h4 className="text-xs font-black text-pink-600 uppercase tracking-[0.2em] border-b border-pink-100 pb-2 flex items-center">
+                <HeartPulse size={14} className="mr-2" /> IV. Status Kehamilan
+              </h4>
+              <div className="bg-pink-50/50 p-6 rounded-[2rem] border border-pink-100">
+                <div className="flex items-center justify-between mb-4">
+                  <div>
+                    <p className="text-[11px] font-black text-pink-700 uppercase">Apakah Sedang Hamil?</p>
+                    <p className="text-[9px] text-slate-400 font-bold uppercase mt-1">Aktifkan jika penduduk terdeteksi hamil untuk monitoring KIA</p>
+                  </div>
+                  <label className="relative inline-flex items-center cursor-pointer">
+                    <input 
+                      type="checkbox" 
+                      name="isPregnant" 
+                      checked={formData.isPregnant} 
+                      onChange={handleChange} 
+                      className="sr-only peer" 
+                    />
+                    <div className="w-14 h-7 bg-slate-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-6 after:w-6 after:transition-all peer-checked:bg-pink-500"></div>
+                  </label>
+                </div>
+                
+                {formData.isPregnant && (
+                  <div className="animate-in slide-in-from-top-2 duration-300">
+                    <label className="block text-[10px] font-black text-pink-700 mb-2 uppercase tracking-widest">Tanggal Mulai Hamil / HPHT</label>
+                    <input 
+                      type="date" 
+                      name="pregnancyStartDate" 
+                      value={formData.pregnancyStartDate || ''} 
+                      onChange={handleChange} 
+                      className="w-full bg-white border border-pink-200 rounded-2xl px-4 py-3 text-sm font-bold outline-none focus:ring-4 focus:ring-pink-500/10" 
+                      required={formData.isPregnant}
+                    />
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
         </form>
 
         <div className="p-8 border-t border-slate-200 bg-slate-50 flex justify-end space-x-4">

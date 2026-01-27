@@ -7,6 +7,7 @@ import RecapIndicators from './components/RecapIndicators';
 import AppSettings from './components/AppSettings';
 import ArchivedResidents from './components/ArchivedResidents';
 import BirthManagement from './components/BirthManagement';
+import PregnancyManagement from './components/PregnancyManagement';
 import { Resident, AppConfig } from './types';
 import { initialResidents } from './mockData';
 import { initializeApp, getApp, getApps } from 'firebase/app';
@@ -120,21 +121,24 @@ const App: React.FC = () => {
   }, [config]);
 
   const renderContent = () => {
+    const activeResidents = residents.filter(r => r.status === 'Aktif');
     switch (activeTab) {
       case 'dashboard':
-        return <Dashboard residents={residents.filter(r => r.status === 'Aktif')} />;
+        return <Dashboard residents={activeResidents} />;
       case 'penduduk':
         return <PopulationManagement residents={residents} setResidents={setResidents} config={config} />;
       case 'kelahiran':
         return <BirthManagement residents={residents} setResidents={setResidents} />;
+      case 'kehamilan':
+        return <PregnancyManagement residents={residents} setResidents={setResidents} />;
       case 'arsip':
         return <ArchivedResidents residents={residents} setResidents={setResidents} />;
       case 'rekap':
-        return <RecapIndicators residents={residents.filter(r => r.status === 'Aktif')} config={config} />;
+        return <RecapIndicators residents={activeResidents} config={config} />;
       case 'profil':
         return <AppSettings config={config} setConfig={setConfig} />;
       default:
-        return <Dashboard residents={residents.filter(r => r.status === 'Aktif')} />;
+        return <Dashboard residents={activeResidents} />;
     }
   };
 

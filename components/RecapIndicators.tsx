@@ -25,7 +25,8 @@ import {
   Download,
   Filter,
   Printer,
-  FileText
+  FileText,
+  HeartPulse
 } from 'lucide-react';
 import { jsPDF } from 'jspdf';
 import autoTable from 'jspdf-autotable';
@@ -63,6 +64,10 @@ const RecapIndicators: React.FC<RecapIndicatorsProps> = ({ residents = [], confi
     return residents.filter(r => r.dusun === dusunFilter);
   }, [residents, dusunFilter]);
 
+  const totalPregnant = useMemo(() => {
+    return filteredForChart.filter(r => r.isPregnant).length;
+  }, [filteredForChart]);
+
   const getRecapData = (key: string) => {
     const counts = filteredForChart.reduce((acc, r) => {
       let val: string = 'N/A';
@@ -72,7 +77,6 @@ const RecapIndicators: React.FC<RecapIndicatorsProps> = ({ residents = [], confi
       return acc;
     }, {} as Record<string, number>);
     
-    // Fixed: Explicitly cast value as number to resolve 'unknown' assignment error on line 76
     return Object.entries(counts)
       .map(([name, value]): { name: string; value: number } => ({ name, value: value as number }))
       .sort((a, b) => b.value - a.value);
@@ -178,19 +182,37 @@ const RecapIndicators: React.FC<RecapIndicatorsProps> = ({ residents = [], confi
 
   if (!selectedIndicator) {
     return (
-      <div className="grid grid-cols-2 md:grid-cols-3 gap-3 md:gap-6 animate-in fade-in duration-500">
-        {INDICATORS_CONFIG.map((item) => (
-          <button
-            key={item.id}
-            onClick={() => setSelectedIndicator(item.id)}
-            className="bg-white p-5 md:p-10 rounded-2xl md:rounded-[3rem] border border-slate-200 shadow-sm flex flex-col items-center text-center space-y-4 transition-all hover:shadow-xl hover:scale-[1.03] group"
-          >
-            <div className={`${item.color} text-white p-4 md:p-8 rounded-2xl md:rounded-[2rem] shrink-0 shadow-lg shadow-current/10 group-hover:scale-110 transition-transform`}>
-              <item.icon size={24} className="md:w-10 md:h-10" />
-            </div>
-            <h3 className="text-[10px] md:text-base font-black text-slate-800 uppercase tracking-widest">{item.label}</h3>
-          </button>
-        ))}
+      <div className="space-y-8 animate-in fade-in duration-500">
+        <div className="bg-white p-8 rounded-[3rem] border border-slate-200 shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-6">
+           <div className="flex items-center space-x-6">
+              <div className="w-16 h-16 bg-pink-100 text-pink-600 rounded-3xl flex items-center justify-center shadow-inner">
+                 <HeartPulse size={32} />
+              </div>
+              <div>
+                 <h2 className="text-xl font-black text-slate-900 uppercase tracking-tighter leading-none">Indikator Ibu Hamil</h2>
+                 <p className="text-slate-400 text-[10px] font-bold uppercase tracking-widest mt-2">Data KIA (Kesehatan Ibu dan Anak)</p>
+              </div>
+           </div>
+           <div className="bg-pink-50 border border-pink-100 px-10 py-4 rounded-3xl text-center">
+              <span className="text-3xl font-black text-pink-600 block leading-none">{totalPregnant}</span>
+              <span className="text-[9px] font-black text-pink-400 uppercase tracking-[0.2em] mt-1 block">Total Ibu Hamil Aktif</span>
+           </div>
+        </div>
+
+        <div className="grid grid-cols-2 md:grid-cols-3 gap-3 md:gap-6">
+          {INDICATORS_CONFIG.map((item) => (
+            <button
+              key={item.id}
+              onClick={() => setSelectedIndicator(item.id)}
+              className="bg-white p-5 md:p-10 rounded-2xl md:rounded-[3rem] border border-slate-200 shadow-sm flex flex-col items-center text-center space-y-4 transition-all hover:shadow-xl hover:scale-[1.03] group"
+            >
+              <div className={`${item.color} text-white p-4 md:p-8 rounded-2xl md:rounded-[2rem] shrink-0 shadow-lg shadow-current/10 group-hover:scale-110 transition-transform`}>
+                <item.icon size={24} className="md:w-10 md:h-10" />
+              </div>
+              <h3 className="text-[10px] md:text-base font-black text-slate-800 uppercase tracking-widest">{item.label}</h3>
+            </button>
+          ))}
+        </div>
       </div>
     );
   }

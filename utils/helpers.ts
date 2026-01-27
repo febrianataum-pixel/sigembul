@@ -13,6 +13,19 @@ export const calculateAge = (birthDate: string): number => {
   return age;
 };
 
+export const calculatePregnancyAge = (startDate: string) => {
+  if (!startDate) return { weeks: 0, days: 0 };
+  const start = new Date(startDate);
+  const now = new Date();
+  const diffTime = Math.abs(now.getTime() - start.getTime());
+  const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+  
+  const weeks = Math.floor(diffDays / 7);
+  const days = diffDays % 7;
+  
+  return { weeks, days };
+};
+
 export const getAgeGroup = (age: number): AgeGroup => {
   if (age <= 1) return '0-1 Bayi';
   if (age <= 5) return '1-5 Balita';

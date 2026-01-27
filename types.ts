@@ -30,6 +30,9 @@ export interface Resident {
   moveDestination?: string;
   deleteDate?: string;
   deleteReason?: string;
+  // Pregnancy Fields
+  isPregnant?: boolean;
+  pregnancyStartDate?: string;
 }
 
 export interface FirebaseConfig {
