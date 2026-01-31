@@ -37,13 +37,14 @@ const App: React.FC = () => {
   const [activeTab, setActiveTab] = useState('dashboard');
   const [isSyncing, setIsSyncing] = useState(false);
   
-  // Refs untuk mencegah loop sinkronisasi
+  // Refs untuk manajemen sinkronisasi
   const skipNextResidentSync = useRef(false);
-  const skipNextConfigSync = useRef(false);
+  const isInitialCloudLoadResident = useRef(false);
+  const isInitialCloudLoadConfig = useRef(false);
   const lastCloudResidentUpdate = useRef<string | null>(null);
   const lastCloudConfigUpdate = useRef<string | null>(null);
 
-  // Sync Theme with Document Root (Penting untuk Dark Mode Tailwind)
+  // Sync Theme with Document Root
   useEffect(() => {
     const root = window.document.documentElement;
     if (config.theme === 'dark') {
@@ -53,9 +54,14 @@ const App: React.FC = () => {
     }
   }, [config.theme]);
 
-  // 1. Setup Firebase & Listeners
+  // 1. Setup Firebase Listeners
   useEffect(() => {
-    if (!config.firebaseConfig?.enabled || !config.firebaseConfig.projectId) return;
+    if (!config.firebaseConfig?.enabled || !config.firebaseConfig.projectId) {
+      // Jika mode lokal, anggap load selesai agar bisa simpan ke localstorage
+      isInitialCloudLoadResident.current = true;
+      isInitialCloudLoadConfig.current = true;
+      return;
+    }
 
     let unsubRes = () => {};
     let unsubConf = () => {};
@@ -77,40 +83,47 @@ const App: React.FC = () => {
             localStorage.setItem('siga_residents', JSON.stringify(data.list || []));
           }
         }
+        // Tandai bahwa kita sudah mendengar dari Cloud pertama kali
+        isInitialCloudLoadResident.current = true;
+      }, (err) => {
+        console.error("Cloud error, falling back to local:", err);
+        isInitialCloudLoadResident.current = true;
       });
 
-      // Listener Konfigurasi (Termasuk Logo & Nama Admin)
+      // Listener Konfigurasi
       unsubConf = onSnapshot(doc(db, "ngumbul_data", "app_config"), (snap) => {
         if (snap.exists()) {
           const data = snap.data();
           if (data.lastUpdated !== lastCloudConfigUpdate.current) {
             lastCloudConfigUpdate.current = data.lastUpdated;
-            skipNextConfigSync.current = true;
-            
             setConfig(prev => {
-              const newConf = { 
-                ...prev, 
-                ...data, 
-                firebaseConfig: prev.firebaseConfig 
-              };
+              const newConf = { ...prev, ...data, firebaseConfig: prev.firebaseConfig, theme: data.theme || prev.theme };
               localStorage.setItem('siga_config', JSON.stringify(newConf));
               return newConf;
             });
           }
         }
+        isInitialCloudLoadConfig.current = true;
+      }, () => {
+        isInitialCloudLoadConfig.current = true;
       });
 
     } catch (e) {
       console.error("Firebase Connection Error:", e);
+      isInitialCloudLoadResident.current = true;
+      isInitialCloudLoadConfig.current = true;
     }
 
     return () => { unsubRes(); unsubConf(); };
   }, [config.firebaseConfig?.enabled, config.firebaseConfig?.projectId]);
 
-  // 2. Upload Data Penduduk (Debounced)
+  // 2. Sync Residents to Cloud
   useEffect(() => {
     localStorage.setItem('siga_residents', JSON.stringify(residents));
     
+    // GUARD: Jangan upload jika Firebase aktif tapi kita belum selesai narik data awal dari Cloud
+    if (!isInitialCloudLoadResident.current) return;
+
     if (config.firebaseConfig?.enabled && config.firebaseConfig.projectId) {
       if (skipNextResidentSync.current) {
         skipNextResidentSync.current = false;
@@ -127,35 +140,29 @@ const App: React.FC = () => {
             list: residents,
             lastUpdated: ts
           });
-        } catch (e) { console.error(e); }
+        } catch (e) { console.error("Upload Error:", e); }
         finally { setTimeout(() => setIsSyncing(false), 500); }
-      }, 1500);
+      }, 2000); // Debounce lebih lama untuk memastikan kestabilan
       return () => clearTimeout(timer);
     }
   }, [residents]);
 
-  // 3. Upload Konfigurasi (Logo, Admin, Theme)
+  // 3. Sync Config to Cloud
   useEffect(() => {
-    if (config.firebaseConfig?.enabled && config.firebaseConfig.projectId) {
-      if (skipNextConfigSync.current) {
-        skipNextConfigSync.current = false;
-        return;
-      }
+    if (!isInitialCloudLoadConfig.current) return;
 
+    if (config.firebaseConfig?.enabled && config.firebaseConfig.projectId) {
       const timer = setTimeout(async () => {
-        setIsSyncing(true);
         try {
           const db = getFirestore(getApp());
           const ts = new Date().toISOString();
           lastCloudConfigUpdate.current = ts;
-          
           const { firebaseConfig, ...publicConfig } = config;
           await setDoc(doc(db, "ngumbul_data", "app_config"), { 
             ...publicConfig,
             lastUpdated: ts
           });
         } catch (e) { console.error(e); }
-        finally { setTimeout(() => setIsSyncing(false), 500); }
       }, 1000);
       return () => clearTimeout(timer);
     }

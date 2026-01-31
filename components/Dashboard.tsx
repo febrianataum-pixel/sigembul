@@ -93,7 +93,7 @@ const Dashboard: React.FC<DashboardProps> = ({ residents }) => {
   }, [residents]);
 
   const StatCard = ({ icon: Icon, label, value, colorClass }: any) => (
-    <div className={`bg-white dark:bg-slate-900 p-3 md:p-6 rounded-xl md:rounded-3xl border border-slate-200 dark:border-slate-800 flex items-center space-x-3 md:space-x-5 shadow-sm transition-transform hover:scale-[1.02]`}>
+    <div className="bg-white dark:bg-slate-900 p-3 md:p-6 rounded-xl md:rounded-3xl border border-slate-200 dark:border-slate-800 flex items-center space-x-3 md:space-x-5 shadow-sm transition-all hover:scale-[1.02]">
       <div className={`p-2 md:p-4 rounded-lg md:rounded-2xl ${colorClass} shrink-0`}>
         <Icon size={16} className="md:w-6 md:h-6" />
       </div>
@@ -108,7 +108,7 @@ const Dashboard: React.FC<DashboardProps> = ({ residents }) => {
     <div className="space-y-4 md:space-y-8 animate-in fade-in duration-500">
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 md:gap-6">
         <StatCard icon={Users} label="Penduduk" value={totalResidents} colorClass="bg-blue-600 text-white" />
-        <StatCard icon={Home} label="Kepala KK" value={totalKK} colorClass="bg-slate-950 text-white" />
+        <StatCard icon={Home} label="Kepala KK" value={totalKK} colorClass="bg-slate-900 dark:bg-blue-900/40 text-white" />
         <StatCard icon={Layers} label="Unit RT" value={totalRT} colorClass="bg-emerald-600 text-white" />
         <StatCard icon={MapPin} label="Dusun" value={totalDusun} colorClass="bg-amber-500 text-white" />
       </div>
