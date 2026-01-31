@@ -5,6 +5,7 @@ export type Education = 'Tidak/Belum Sekolah' | 'SD' | 'SMP' | 'SMA' | 'Diploma'
 export type BloodType = 'A' | 'B' | 'AB' | 'O' | 'Tidak Tahu';
 export type ResidentStatus = 'Aktif' | 'Meninggal' | 'Pindah' | 'Terhapus';
 export type PregnancyRisk = 'Tinggi' | 'Sedang' | 'Rendah';
+export type AppTheme = 'light' | 'dark';
 
 export interface Resident {
   id: string;
@@ -53,6 +54,7 @@ export interface AppConfig {
   logoUrl: string;
   operatorName: string;
   villageHeadName: string;
+  theme?: AppTheme;
   firebaseConfig?: FirebaseConfig;
 }
 

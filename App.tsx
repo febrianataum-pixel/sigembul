@@ -40,6 +40,7 @@ const App: React.FC = () => {
           logoUrl: 'https://upload.wikimedia.org/wikipedia/commons/1/1d/Lambang_Kabupaten_Blora.png',
           operatorName: 'ADMIN DESA',
           villageHeadName: 'SULARNO',
+          theme: 'light',
           firebaseConfig: { enabled: false }
         } as AppConfig;
       }
@@ -50,6 +51,7 @@ const App: React.FC = () => {
       logoUrl: 'https://upload.wikimedia.org/wikipedia/commons/1/1d/Lambang_Kabupaten_Blora.png',
       operatorName: 'ADMIN DESA',
       villageHeadName: 'SULARNO',
+      theme: 'light',
       firebaseConfig: { enabled: false }
     };
   });
@@ -58,15 +60,17 @@ const App: React.FC = () => {
   const [isSyncing, setIsSyncing] = useState(false);
   
   // Ref untuk mendeteksi apakah perubahan state berasal dari Cloud (onSnapshot)
-  // agar tidak dikirim balik ke Cloud (infinite loop / conflict)
-  const skipNextSync = useRef(false);
-  const lastCloudUpdate = useRef<string | null>(null);
+  const skipNextResidentSync = useRef(false);
+  const skipNextConfigSync = useRef(false);
+  const lastCloudResidentUpdate = useRef<string | null>(null);
+  const lastCloudConfigUpdate = useRef<string | null>(null);
 
   // 1. Inisialisasi Firebase & Listener Real-time
   useEffect(() => {
     if (!config.firebaseConfig?.enabled || !config.firebaseConfig.projectId) return;
 
-    let unsubscribe = () => {};
+    let unsubscribeResidents = () => {};
+    let unsubscribeConfig = () => {};
 
     try {
       const firebaseApp = getApps().length === 0 
@@ -81,47 +85,65 @@ const App: React.FC = () => {
         : getApp();
 
       const db = getFirestore(firebaseApp);
-      const docRef = doc(db, "ngumbul_data", "residents_master");
       
-      console.log("🔥 Menyambungkan ke Cloud Firestore...");
-
-      // Listen perubahan dari browser lain secara real-time
-      unsubscribe = onSnapshot(docRef, (docSnap) => {
+      // Listen Resident Master
+      const resDocRef = doc(db, "ngumbul_data", "residents_master");
+      unsubscribeResidents = onSnapshot(resDocRef, (docSnap) => {
         if (docSnap.exists()) {
           const data = docSnap.data();
           const remoteList = data.list || [];
           const updateId = data.lastUpdated;
 
-          // Jika data ini berbeda dengan yang kita miliki terakhir (berdasarkan timestamp)
-          if (updateId !== lastCloudUpdate.current) {
-            console.log("☁️ Menerima update data dari Cloud...");
-            lastCloudUpdate.current = updateId;
-            skipNextSync.current = true; // Jangan kirim data ini balik ke Cloud
-            
+          if (updateId !== lastCloudResidentUpdate.current) {
+            console.log("☁️ Sync: Data Penduduk diterima...");
+            lastCloudResidentUpdate.current = updateId;
+            skipNextResidentSync.current = true;
             setResidents(remoteList);
             localStorage.setItem('siga_residents', JSON.stringify(remoteList));
           }
         }
-      }, (error) => {
-        console.error("Firebase Snapshot Error:", error);
+      });
+
+      // Listen Config (termasuk Theme)
+      const confDocRef = doc(db, "ngumbul_data", "app_config");
+      unsubscribeConfig = onSnapshot(confDocRef, (docSnap) => {
+        if (docSnap.exists()) {
+          const data = docSnap.data() as AppConfig & { lastUpdated?: string };
+          const updateId = data.lastUpdated;
+
+          if (updateId !== lastCloudConfigUpdate.current) {
+            console.log("☁️ Sync: Konfigurasi/Tema diterima...");
+            lastCloudConfigUpdate.current = updateId;
+            skipNextConfigSync.current = true;
+            
+            // Gabungkan remote config dengan local firebase config agar tidak terputus koneksi lokalnya
+            const mergedConfig: AppConfig = {
+              ...data,
+              firebaseConfig: config.firebaseConfig // Tetap gunakan setting lokal untuk kredensial Firebase
+            };
+            setConfig(mergedConfig);
+            localStorage.setItem('siga_config', JSON.stringify(mergedConfig));
+          }
+        }
       });
 
     } catch (error) {
-      console.error("Firebase Initialization Error:", error);
+      console.error("Firebase Sync Initialization Error:", error);
     }
 
-    return () => unsubscribe();
+    return () => {
+      unsubscribeResidents();
+      unsubscribeConfig();
+    };
   }, [config.firebaseConfig?.enabled, config.firebaseConfig?.projectId]);
 
-  // 2. Sinkronisasi Perubahan Lokal ke Cloud
+  // 2. Sinkronisasi Residents ke Cloud
   useEffect(() => {
-    // Simpan ke localStorage tetap dilakukan tiap ada perubahan
     localStorage.setItem('siga_residents', JSON.stringify(residents));
     
-    // Jika Cloud aktif dan perubahan BUKAN berasal dari onSnapshot (melainkan aksi user lokal)
     if (config.firebaseConfig?.enabled && config.firebaseConfig.projectId) {
-      if (skipNextSync.current) {
-        skipNextSync.current = false;
+      if (skipNextResidentSync.current) {
+        skipNextResidentSync.current = false;
         return;
       }
 
@@ -131,33 +153,59 @@ const App: React.FC = () => {
           const firebaseApp = getApp();
           const db = getFirestore(firebaseApp);
           const updateTimestamp = new Date().toISOString();
-          
-          lastCloudUpdate.current = updateTimestamp;
+          lastCloudResidentUpdate.current = updateTimestamp;
 
           await setDoc(doc(db, "ngumbul_data", "residents_master"), { 
             list: residents,
             lastUpdated: updateTimestamp,
             updatedBy: config.operatorName
           });
-          
-          console.log("✅ Data berhasil disinkronkan ke Cloud.");
         } catch (e) {
-          console.error("❌ Gagal sinkron ke cloud:", e);
+          console.error("Sync Residents Error:", e);
         } finally {
-          // Beri jeda visual sedikit agar user tahu proses selesai
           setTimeout(() => setIsSyncing(false), 800);
         }
       };
       
-      // Debounce: Tunggu 1 detik setelah user berhenti mengubah data baru kirim ke Cloud
       const debounceTimer = setTimeout(syncToCloud, 1000);
       return () => clearTimeout(debounceTimer);
     }
   }, [residents]);
 
-  // Simpan config ke localStorage
+  // 3. Sinkronisasi Config (Theme, dll) ke Cloud
   useEffect(() => {
     localStorage.setItem('siga_config', JSON.stringify(config));
+
+    if (config.firebaseConfig?.enabled && config.firebaseConfig.projectId) {
+      if (skipNextConfigSync.current) {
+        skipNextConfigSync.current = false;
+        return;
+      }
+
+      const syncConfigToCloud = async () => {
+        setIsSyncing(true);
+        try {
+          const firebaseApp = getApp();
+          const db = getFirestore(firebaseApp);
+          const updateTimestamp = new Date().toISOString();
+          lastCloudConfigUpdate.current = updateTimestamp;
+
+          // Kita hanya kirim profil, bukan kredensial firebase sensitif
+          const { firebaseConfig, ...publicConfig } = config;
+          await setDoc(doc(db, "ngumbul_data", "app_config"), { 
+            ...publicConfig,
+            lastUpdated: updateTimestamp
+          });
+        } catch (e) {
+          console.error("Sync Config Error:", e);
+        } finally {
+          setTimeout(() => setIsSyncing(false), 800);
+        }
+      };
+
+      const debounceTimer = setTimeout(syncConfigToCloud, 1500);
+      return () => clearTimeout(debounceTimer);
+    }
   }, [config]);
 
   const renderContent = () => {
@@ -185,7 +233,13 @@ const App: React.FC = () => {
   };
 
   return (
-    <Layout activeTab={activeTab} setActiveTab={setActiveTab} config={config} isSyncing={isSyncing}>
+    <Layout 
+      activeTab={activeTab} 
+      setActiveTab={setActiveTab} 
+      config={config} 
+      setConfig={setConfig}
+      isSyncing={isSyncing}
+    >
       {renderContent()}
     </Layout>
   );
