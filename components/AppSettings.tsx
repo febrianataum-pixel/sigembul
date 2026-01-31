@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Save, Globe, RefreshCcw, User, Shield, Info, Image as ImageIcon, Server, Cloud, Database, Wifi, WifiOff } from 'lucide-react';
 import { AppConfig } from '../types';
 
@@ -12,6 +12,11 @@ const AppSettings: React.FC<AppSettingsProps> = ({ config, setConfig }) => {
   const [formData, setFormData] = useState<AppConfig>(config);
   const [isSaved, setIsSaved] = useState(false);
 
+  // Sinkronkan form jika ada update dari Cloud (Browser lain)
+  useEffect(() => {
+    setFormData(config);
+  }, [config]);
+
   const handleSave = (e: React.FormEvent) => {
     e.preventDefault();
     setConfig(formData);
@@ -20,22 +25,21 @@ const AppSettings: React.FC<AppSettingsProps> = ({ config, setConfig }) => {
   };
 
   const handleUpdateFirebase = () => {
-    // Jika user mengklik update tapi enabled masih false, kita paksa true jika projectId ada
     const newConfig = { ...formData };
     if (newConfig.firebaseConfig && newConfig.firebaseConfig.projectId && !newConfig.firebaseConfig.enabled) {
       newConfig.firebaseConfig.enabled = true;
-      setFormData(newConfig);
     }
+    setFormData(newConfig);
     setConfig(newConfig);
     setIsSaved(true);
     setTimeout(() => setIsSaved(false), 3000);
   };
 
   const updateFirebase = (field: string, value: any) => {
-    setFormData({
-      ...formData,
+    setFormData(prev => ({
+      ...prev,
       firebaseConfig: {
-        ...(formData.firebaseConfig || {
+        ...(prev.firebaseConfig || {
           apiKey: '',
           authDomain: '',
           projectId: '',
@@ -46,14 +50,14 @@ const AppSettings: React.FC<AppSettingsProps> = ({ config, setConfig }) => {
         }),
         [field]: value
       }
-    });
+    }));
   };
 
   return (
     <div className="max-w-4xl mx-auto grid grid-cols-1 lg:grid-cols-2 gap-6 pb-20">
-      <div className="bg-white rounded-[2.5rem] border border-slate-200 overflow-hidden shadow-sm h-fit">
-        <div className="p-6 border-b border-slate-100 flex items-center justify-between">
-          <h2 className="text-sm font-black uppercase tracking-widest">Profil Aplikasi & Desa</h2>
+      <div className="bg-white dark:bg-slate-900 rounded-[2.5rem] border border-slate-200 dark:border-slate-800 overflow-hidden shadow-sm h-fit">
+        <div className="p-6 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between">
+          <h2 className="text-sm font-black uppercase tracking-widest text-slate-900 dark:text-white">Profil Aplikasi & Desa</h2>
           <Globe size={18} className="text-blue-600" />
         </div>
 
@@ -61,40 +65,40 @@ const AppSettings: React.FC<AppSettingsProps> = ({ config, setConfig }) => {
           <div className="space-y-4">
             <div>
               <label className="text-[9px] font-black text-slate-400 uppercase tracking-widest block mb-1.5">Nama Aplikasi</label>
-              <input type="text" className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 font-black text-xs uppercase" value={formData.appName} onChange={(e) => setFormData({...formData, appName: e.target.value})} />
+              <input type="text" className="w-full bg-slate-50 dark:bg-slate-800 dark:text-white border border-slate-200 dark:border-slate-700 rounded-xl px-4 py-3 font-black text-xs uppercase" value={formData.appName} onChange={(e) => setFormData({...formData, appName: e.target.value})} />
             </div>
             <div>
               <label className="text-[9px] font-black text-slate-400 uppercase tracking-widest block mb-1.5">Wilayah / Subtitle</label>
-              <input type="text" className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 font-bold text-xs" value={formData.subtitle} onChange={(e) => setFormData({...formData, subtitle: e.target.value})} />
+              <input type="text" className="w-full bg-slate-50 dark:bg-slate-800 dark:text-white border border-slate-200 dark:border-slate-700 rounded-xl px-4 py-3 font-bold text-xs" value={formData.subtitle} onChange={(e) => setFormData({...formData, subtitle: e.target.value})} />
             </div>
             <div>
               <label className="text-[9px] font-black text-slate-400 uppercase tracking-widest block mb-1.5">Nama Kepala Desa (TTD PDF)</label>
               <div className="relative">
                 <User size={14} className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" />
-                <input type="text" className="w-full bg-slate-50 border border-slate-200 rounded-xl pl-10 pr-4 py-3 font-black text-xs uppercase" value={formData.villageHeadName} onChange={(e) => setFormData({...formData, villageHeadName: e.target.value})} placeholder="SULARNO" />
+                <input type="text" className="w-full bg-slate-50 dark:bg-slate-800 dark:text-white border border-slate-200 dark:border-slate-700 rounded-xl pl-10 pr-4 py-3 font-black text-xs uppercase" value={formData.villageHeadName} onChange={(e) => setFormData({...formData, villageHeadName: e.target.value})} placeholder="SULARNO" />
               </div>
             </div>
             <div>
               <label className="text-[9px] font-black text-slate-400 uppercase tracking-widest block mb-1.5">Logo URL</label>
               <div className="relative">
                 <ImageIcon size={14} className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" />
-                <input type="text" className="w-full bg-slate-50 border border-slate-200 rounded-xl pl-10 pr-4 py-3 font-bold text-xs" value={formData.logoUrl} onChange={(e) => setFormData({...formData, logoUrl: e.target.value})} />
+                <input type="text" className="w-full bg-slate-50 dark:bg-slate-800 dark:text-white border border-slate-200 dark:border-slate-700 rounded-xl pl-10 pr-4 py-3 font-bold text-xs" value={formData.logoUrl} onChange={(e) => setFormData({...formData, logoUrl: e.target.value})} />
               </div>
             </div>
             <div>
               <label className="text-[9px] font-black text-slate-400 uppercase tracking-widest block mb-1.5">Nama Operator</label>
-              <input type="text" className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 font-black text-xs uppercase" value={formData.operatorName} onChange={(e) => setFormData({...formData, operatorName: e.target.value})} />
+              <input type="text" className="w-full bg-slate-50 dark:bg-slate-800 dark:text-white border border-slate-200 dark:border-slate-700 rounded-xl px-4 py-3 font-black text-xs uppercase" value={formData.operatorName} onChange={(e) => setFormData({...formData, operatorName: e.target.value})} />
             </div>
           </div>
 
-          <button type="submit" className="w-full py-4 bg-slate-900 text-white rounded-2xl text-[10px] font-black uppercase tracking-widest shadow-xl flex items-center justify-center space-x-2 transition-all hover:bg-blue-600">
+          <button type="submit" className="w-full py-4 bg-slate-900 dark:bg-blue-600 text-white rounded-2xl text-[10px] font-black uppercase tracking-widest shadow-xl flex items-center justify-center space-x-2 transition-all hover:bg-blue-600">
             <Save size={16} />
-            <span>Simpan Profil</span>
+            <span>Simpan & Sinkron Profil</span>
           </button>
         </form>
       </div>
 
-      <div className="bg-slate-900 rounded-[2.5rem] border border-slate-800 overflow-hidden shadow-2xl text-white">
+      <div className="bg-slate-950 rounded-[2.5rem] border border-slate-800 overflow-hidden shadow-2xl text-white">
         <div className="p-6 border-b border-white/10 flex items-center justify-between">
           <div className="flex items-center space-x-3">
              <Cloud size={18} className={`${formData.firebaseConfig?.enabled ? 'text-emerald-400' : 'text-blue-400'}`} />
@@ -121,7 +125,7 @@ const AppSettings: React.FC<AppSettingsProps> = ({ config, setConfig }) => {
                    Status Koneksi: {formData.firebaseConfig?.enabled ? 'SIAP SINKRON' : 'LOKAL SAJA'}
                  </p>
               </div>
-              <p className="text-[9px] text-slate-500 font-bold leading-relaxed">Pastikan Switch di atas berwarna HIJAU untuk mengaktifkan sinkronisasi Cloud Firestore.</p>
+              <p className="text-[9px] text-slate-500 font-bold leading-relaxed">Aktifkan Switch di atas untuk menyambungkan semua browser ke database yang sama.</p>
            </div>
            
            <div className="space-y-4">
@@ -133,35 +137,18 @@ const AppSettings: React.FC<AppSettingsProps> = ({ config, setConfig }) => {
                 <label className="text-[8px] font-black text-slate-500 uppercase tracking-widest block mb-1">API Key</label>
                 <input type="password" name="apiKey" className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-2.5 text-xs font-mono focus:bg-white/10 outline-none focus:border-blue-500 transition-all" value={formData.firebaseConfig?.apiKey || ''} onChange={(e) => updateFirebase('apiKey', e.target.value)} placeholder="AIzaSy..." />
               </div>
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="text-[8px] font-black text-slate-500 uppercase tracking-widest block mb-1">Auth Domain</label>
-                  <input type="text" className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-2.5 text-xs font-mono focus:bg-white/10 outline-none focus:border-blue-500 transition-all" value={formData.firebaseConfig?.authDomain || ''} onChange={(e) => updateFirebase('authDomain', e.target.value)} />
-                </div>
-                <div>
-                  <label className="text-[8px] font-black text-slate-500 uppercase tracking-widest block mb-1">App ID</label>
-                  <input type="text" className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-2.5 text-xs font-mono focus:bg-white/10 outline-none focus:border-blue-500 transition-all" value={formData.firebaseConfig?.appId || ''} onChange={(e) => updateFirebase('appId', e.target.value)} />
-                </div>
-              </div>
-           </div>
-
-           <div className="mt-4 p-4 bg-amber-500/10 border border-amber-500/20 rounded-2xl">
-              <div className="flex items-start space-x-3">
-                 <Database size={16} className="text-amber-500 mt-1 shrink-0" />
-                 <p className="text-[9px] text-amber-200/70 font-bold uppercase tracking-widest leading-relaxed">Jangan lupa aktifkan Firestore Database di konsol Firebase Anda sebelum menghubungkan.</p>
-              </div>
            </div>
 
            <button onClick={handleUpdateFirebase} className="w-full py-4 bg-blue-600 text-white rounded-2xl text-[10px] font-black uppercase tracking-widest shadow-xl transition-all hover:bg-blue-500 active:scale-95 flex items-center justify-center space-x-2">
              <RefreshCcw size={16} className={isSaved ? "animate-spin" : ""} />
-             <span>Update Konfigurasi Cloud</span>
+             <span>Terapkan Konfigurasi Cloud</span>
            </button>
         </div>
       </div>
 
       {isSaved && (
         <div className="fixed bottom-24 left-1/2 -translate-x-1/2 z-[100] bg-emerald-600 text-white px-8 py-4 rounded-2xl text-[10px] font-black uppercase shadow-2xl animate-in slide-in-from-bottom">
-           Pengaturan Cloud Diperbarui!
+           Berhasil Sinkron ke Cloud!
         </div>
       )}
     </div>

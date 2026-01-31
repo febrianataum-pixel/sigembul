@@ -15,37 +15,15 @@ import { initializeApp, getApp, getApps } from 'firebase/app';
 import { getFirestore, doc, setDoc, onSnapshot } from 'firebase/firestore';
 
 const App: React.FC = () => {
-  // Ambil dari localStorage hanya untuk inisialisasi awal (fast load)
+  // Inisialisasi State
   const [residents, setResidents] = useState<Resident[]>(() => {
     const saved = localStorage.getItem('siga_residents');
-    if (saved) {
-      try {
-        return JSON.parse(saved);
-      } catch (e) {
-        return initialResidents;
-      }
-    }
-    return initialResidents;
+    return saved ? JSON.parse(saved) : initialResidents;
   });
 
   const [config, setConfig] = useState<AppConfig>(() => {
     const saved = localStorage.getItem('siga_config');
-    if (saved) {
-      try {
-        return JSON.parse(saved);
-      } catch (e) {
-        return {
-          appName: 'SIGA Ngumbul',
-          subtitle: 'Kec. Todanan, Kab. Blora',
-          logoUrl: 'https://upload.wikimedia.org/wikipedia/commons/1/1d/Lambang_Kabupaten_Blora.png',
-          operatorName: 'ADMIN DESA',
-          villageHeadName: 'SULARNO',
-          theme: 'light',
-          firebaseConfig: { enabled: false }
-        } as AppConfig;
-      }
-    }
-    return {
+    return saved ? JSON.parse(saved) : {
       appName: 'SIGA Ngumbul',
       subtitle: 'Kec. Todanan, Kab. Blora',
       logoUrl: 'https://upload.wikimedia.org/wikipedia/commons/1/1d/Lambang_Kabupaten_Blora.png',
@@ -59,85 +37,72 @@ const App: React.FC = () => {
   const [activeTab, setActiveTab] = useState('dashboard');
   const [isSyncing, setIsSyncing] = useState(false);
   
-  // Ref untuk mendeteksi apakah perubahan state berasal dari Cloud (onSnapshot)
+  // Refs untuk mencegah loop sinkronisasi
   const skipNextResidentSync = useRef(false);
   const skipNextConfigSync = useRef(false);
   const lastCloudResidentUpdate = useRef<string | null>(null);
   const lastCloudConfigUpdate = useRef<string | null>(null);
 
-  // 1. Inisialisasi Firebase & Listener Real-time
+  // 1. Setup Firebase & Listeners
   useEffect(() => {
     if (!config.firebaseConfig?.enabled || !config.firebaseConfig.projectId) return;
 
-    let unsubscribeResidents = () => {};
-    let unsubscribeConfig = () => {};
+    let unsubRes = () => {};
+    let unsubConf = () => {};
 
     try {
       const firebaseApp = getApps().length === 0 
-        ? initializeApp({
-            apiKey: config.firebaseConfig.apiKey,
-            authDomain: config.firebaseConfig.authDomain,
-            projectId: config.firebaseConfig.projectId,
-            storageBucket: config.firebaseConfig.storageBucket,
-            messagingSenderId: config.firebaseConfig.messagingSenderId,
-            appId: config.firebaseConfig.appId
-          }) 
+        ? initializeApp(config.firebaseConfig) 
         : getApp();
-
       const db = getFirestore(firebaseApp);
       
-      // Listen Resident Master
-      const resDocRef = doc(db, "ngumbul_data", "residents_master");
-      unsubscribeResidents = onSnapshot(resDocRef, (docSnap) => {
-        if (docSnap.exists()) {
-          const data = docSnap.data();
-          const remoteList = data.list || [];
-          const updateId = data.lastUpdated;
+      console.log("📡 Mencoba sinkronisasi cloud...");
 
-          if (updateId !== lastCloudResidentUpdate.current) {
-            console.log("☁️ Sync: Data Penduduk diterima...");
-            lastCloudResidentUpdate.current = updateId;
+      // Listener Data Penduduk
+      unsubRes = onSnapshot(doc(db, "ngumbul_data", "residents_master"), (snap) => {
+        if (snap.exists()) {
+          const data = snap.data();
+          if (data.lastUpdated !== lastCloudResidentUpdate.current) {
+            console.log("☁️ Update Penduduk diterima dari Cloud");
+            lastCloudResidentUpdate.current = data.lastUpdated;
             skipNextResidentSync.current = true;
-            setResidents(remoteList);
-            localStorage.setItem('siga_residents', JSON.stringify(remoteList));
+            setResidents(data.list || []);
+            localStorage.setItem('siga_residents', JSON.stringify(data.list || []));
           }
         }
       });
 
-      // Listen Config (termasuk Theme)
-      const confDocRef = doc(db, "ngumbul_data", "app_config");
-      unsubscribeConfig = onSnapshot(confDocRef, (docSnap) => {
-        if (docSnap.exists()) {
-          const data = docSnap.data() as AppConfig & { lastUpdated?: string };
-          const updateId = data.lastUpdated;
-
-          if (updateId !== lastCloudConfigUpdate.current) {
-            console.log("☁️ Sync: Konfigurasi/Tema diterima...");
-            lastCloudConfigUpdate.current = updateId;
+      // Listener Konfigurasi (Termasuk Logo & Nama Admin)
+      unsubConf = onSnapshot(doc(db, "ngumbul_data", "app_config"), (snap) => {
+        if (snap.exists()) {
+          const data = snap.data();
+          if (data.lastUpdated !== lastCloudConfigUpdate.current) {
+            console.log("☁️ Update Profil/Tema diterima dari Cloud");
+            lastCloudConfigUpdate.current = data.lastUpdated;
             skipNextConfigSync.current = true;
             
-            // Gabungkan remote config dengan local firebase config agar tidak terputus koneksi lokalnya
-            const mergedConfig: AppConfig = {
-              ...data,
-              firebaseConfig: config.firebaseConfig // Tetap gunakan setting lokal untuk kredensial Firebase
-            };
-            setConfig(mergedConfig);
-            localStorage.setItem('siga_config', JSON.stringify(mergedConfig));
+            // CRITICAL: Gunakan functional update untuk menjaga kredensial firebase lokal
+            setConfig(prev => {
+              const newConf = { 
+                ...prev, 
+                ...data, 
+                firebaseConfig: prev.firebaseConfig // Tetap pakai key lokal
+              };
+              localStorage.setItem('siga_config', JSON.stringify(newConf));
+              return newConf;
+            });
           }
         }
       });
 
-    } catch (error) {
-      console.error("Firebase Sync Initialization Error:", error);
+    } catch (e) {
+      console.error("Firebase Connection Error:", e);
     }
 
-    return () => {
-      unsubscribeResidents();
-      unsubscribeConfig();
-    };
+    return () => { unsubRes(); unsubConf(); };
   }, [config.firebaseConfig?.enabled, config.firebaseConfig?.projectId]);
 
-  // 2. Sinkronisasi Residents ke Cloud
+  // 2. Upload Data Penduduk (Debounced)
   useEffect(() => {
     localStorage.setItem('siga_residents', JSON.stringify(residents));
     
@@ -147,88 +112,62 @@ const App: React.FC = () => {
         return;
       }
 
-      const syncToCloud = async () => {
+      const timer = setTimeout(async () => {
         setIsSyncing(true);
         try {
-          const firebaseApp = getApp();
-          const db = getFirestore(firebaseApp);
-          const updateTimestamp = new Date().toISOString();
-          lastCloudResidentUpdate.current = updateTimestamp;
-
+          const db = getFirestore(getApp());
+          const ts = new Date().toISOString();
+          lastCloudResidentUpdate.current = ts;
           await setDoc(doc(db, "ngumbul_data", "residents_master"), { 
             list: residents,
-            lastUpdated: updateTimestamp,
-            updatedBy: config.operatorName
+            lastUpdated: ts
           });
-        } catch (e) {
-          console.error("Sync Residents Error:", e);
-        } finally {
-          setTimeout(() => setIsSyncing(false), 800);
-        }
-      };
-      
-      const debounceTimer = setTimeout(syncToCloud, 1000);
-      return () => clearTimeout(debounceTimer);
+        } catch (e) { console.error(e); }
+        finally { setTimeout(() => setIsSyncing(false), 500); }
+      }, 1500);
+      return () => clearTimeout(timer);
     }
   }, [residents]);
 
-  // 3. Sinkronisasi Config (Theme, dll) ke Cloud
+  // 3. Upload Konfigurasi (Logo, Admin, Theme)
   useEffect(() => {
-    localStorage.setItem('siga_config', JSON.stringify(config));
-
     if (config.firebaseConfig?.enabled && config.firebaseConfig.projectId) {
       if (skipNextConfigSync.current) {
         skipNextConfigSync.current = false;
         return;
       }
 
-      const syncConfigToCloud = async () => {
+      const timer = setTimeout(async () => {
         setIsSyncing(true);
         try {
-          const firebaseApp = getApp();
-          const db = getFirestore(firebaseApp);
-          const updateTimestamp = new Date().toISOString();
-          lastCloudConfigUpdate.current = updateTimestamp;
-
-          // Kita hanya kirim profil, bukan kredensial firebase sensitif
+          const db = getFirestore(getApp());
+          const ts = new Date().toISOString();
+          lastCloudConfigUpdate.current = ts;
+          
           const { firebaseConfig, ...publicConfig } = config;
           await setDoc(doc(db, "ngumbul_data", "app_config"), { 
             ...publicConfig,
-            lastUpdated: updateTimestamp
+            lastUpdated: ts
           });
-        } catch (e) {
-          console.error("Sync Config Error:", e);
-        } finally {
-          setTimeout(() => setIsSyncing(false), 800);
-        }
-      };
-
-      const debounceTimer = setTimeout(syncConfigToCloud, 1500);
-      return () => clearTimeout(debounceTimer);
+        } catch (e) { console.error(e); }
+        finally { setTimeout(() => setIsSyncing(false), 500); }
+      }, 1000);
+      return () => clearTimeout(timer);
     }
   }, [config]);
 
   const renderContent = () => {
     const activeResidents = residents.filter(r => r.status === 'Aktif');
     switch (activeTab) {
-      case 'dashboard':
-        return <Dashboard residents={activeResidents} />;
-      case 'penduduk':
-        return <PopulationManagement residents={residents} setResidents={setResidents} config={config} />;
-      case 'pencarian':
-        return <AdvancedSearch residents={activeResidents} setResidents={setResidents} config={config} />;
-      case 'kelahiran':
-        return <BirthManagement residents={residents} setResidents={setResidents} />;
-      case 'kehamilan':
-        return <PregnancyManagement residents={residents} setResidents={setResidents} />;
-      case 'arsip':
-        return <ArchivedResidents residents={residents} setResidents={setResidents} />;
-      case 'rekap':
-        return <RecapIndicators residents={activeResidents} config={config} />;
-      case 'profil':
-        return <AppSettings config={config} setConfig={setConfig} />;
-      default:
-        return <Dashboard residents={activeResidents} />;
+      case 'dashboard': return <Dashboard residents={activeResidents} />;
+      case 'penduduk': return <PopulationManagement residents={residents} setResidents={setResidents} config={config} />;
+      case 'pencarian': return <AdvancedSearch residents={activeResidents} setResidents={setResidents} config={config} />;
+      case 'kelahiran': return <BirthManagement residents={residents} setResidents={setResidents} />;
+      case 'kehamilan': return <PregnancyManagement residents={residents} setResidents={setResidents} />;
+      case 'arsip': return <ArchivedResidents residents={residents} setResidents={setResidents} />;
+      case 'rekap': return <RecapIndicators residents={activeResidents} config={config} />;
+      case 'profil': return <AppSettings config={config} setConfig={setConfig} />;
+      default: return <Dashboard residents={activeResidents} />;
     }
   };
 
