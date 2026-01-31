@@ -29,9 +29,8 @@
       overscroll-behavior-y: contain;
     }
     
-    /* Dark mode body override */
     .dark body {
-      background-color: #020617; /* slate-950 */
+      background-color: #020617;
     }
 
     .transition-all {
@@ -52,36 +51,12 @@
       border-radius: 10px;
     }
 
-    .print-only { display: none; }
-
-    @media print {
-      @page { 
-        size: A4 landscape; 
-        margin: 1cm; 
-      }
-      body { 
-        background-color: white !important; 
-        -webkit-print-color-adjust: exact; 
-        print-color-adjust: exact;
-      }
-      .no-print { display: none !important; }
-      #root { margin: 0 !important; padding: 0 !important; }
-      .print-only { display: block !important; }
-      table { width: 100% !important; border-collapse: collapse !important; }
-      th, td { border: 0.5pt solid black !important; padding: 4pt 3pt !important; font-size: 8pt !important; color: black !important; }
-    }
-
     .scrollbar-hide {
       -ms-overflow-style: none;
       scrollbar-width: none;
     }
     .scrollbar-hide::-webkit-scrollbar {
       display: none;
-    }
-
-    button, a, select, input {
-      min-height: 40px;
-      min-width: 40px;
     }
   </style>
 <script type="importmap">
@@ -96,6 +71,7 @@
     "jspdf-autotable": "https://esm.sh/jspdf-autotable@^3.5.28",
     "firebase/app": "https://esm.sh/firebase@11.1.0/app",
     "firebase/firestore": "https://esm.sh/firebase@11.1.0/firestore",
+    "firebase/auth": "https://esm.sh/firebase@11.1.0/auth",
     "firebase/": "https://esm.sh/firebase@^12.8.0/"
   }
 }

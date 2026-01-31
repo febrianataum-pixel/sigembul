@@ -1,16 +1,19 @@
 
 import React, { useState, useEffect } from 'react';
-import { Save, Globe, RefreshCcw, User, Shield, Image as ImageIcon, Cloud, Database, Wifi, WifiOff, UploadCloud, DownloadCloud } from 'lucide-react';
+import { Save, Globe, RefreshCcw, User, Shield, Image as ImageIcon, Cloud, Database, Wifi, WifiOff, UploadCloud, DownloadCloud, LogOut, Key } from 'lucide-react';
 import { AppConfig } from '../types';
+import { User as FirebaseUser } from 'firebase/auth';
 
 interface AppSettingsProps {
   config: AppConfig;
   setConfig: React.Dispatch<React.SetStateAction<AppConfig>>;
   onForcePush: () => void;
   onForcePull: () => void;
+  user: FirebaseUser | null;
+  onLogout: () => void;
 }
 
-const AppSettings: React.FC<AppSettingsProps> = ({ config, setConfig, onForcePush, onForcePull }) => {
+const AppSettings: React.FC<AppSettingsProps> = ({ config, setConfig, onForcePush, onForcePull, user, onLogout }) => {
   const [formData, setFormData] = useState<AppConfig>(config);
   const [isSaved, setIsSaved] = useState(false);
 
@@ -71,6 +74,17 @@ const AppSettings: React.FC<AppSettingsProps> = ({ config, setConfig, onForcePus
             <Save size={16} />
             <span>Simpan Perubahan</span>
           </button>
+
+          {user && (
+            <button 
+              type="button" 
+              onClick={onLogout}
+              className="w-full py-4 bg-rose-50 dark:bg-rose-900/20 text-rose-600 dark:text-rose-400 rounded-2xl text-[10px] font-black uppercase tracking-widest flex items-center justify-center space-x-2 border border-rose-100 dark:border-rose-900/30 transition-all hover:bg-rose-600 hover:text-white"
+            >
+              <LogOut size={16} />
+              <span>Keluar Sesi (Logout)</span>
+            </button>
+          )}
         </form>
       </div>
 
@@ -89,12 +103,34 @@ const AppSettings: React.FC<AppSettingsProps> = ({ config, setConfig, onForcePus
         </div>
 
         <div className="p-8 space-y-5">
+           {user ? (
+             <div className="bg-emerald-500/10 border border-emerald-500/20 p-4 rounded-2xl flex items-center space-x-4 mb-4">
+                <div className="w-10 h-10 bg-emerald-500 rounded-full flex items-center justify-center">
+                   <User size={20} className="text-white" />
+                </div>
+                <div className="min-w-0">
+                   <p className="text-[8px] font-black text-emerald-400 uppercase tracking-widest">Sesi Aktif Sebagai</p>
+                   <p className="text-xs font-black truncate">{user.email}</p>
+                </div>
+             </div>
+           ) : (
+             <div className="bg-rose-500/10 border border-rose-500/20 p-4 rounded-2xl flex items-center space-x-4 mb-4">
+                <div className="w-10 h-10 bg-rose-500 rounded-full flex items-center justify-center">
+                   <Key size={20} className="text-white" />
+                </div>
+                <div className="min-w-0">
+                   <p className="text-[8px] font-black text-rose-400 uppercase tracking-widest">Status Keamanan</p>
+                   <p className="text-xs font-black truncate">Belum Terautentikasi</p>
+                </div>
+             </div>
+           )}
+
            <div className="grid grid-cols-2 gap-3 mb-4">
-              <button onClick={onForcePush} className="flex flex-col items-center justify-center p-4 bg-white/5 border border-white/10 rounded-2xl hover:bg-white/10 transition-all group">
+              <button onClick={onForcePush} disabled={!user} className="flex flex-col items-center justify-center p-4 bg-white/5 border border-white/10 rounded-2xl hover:bg-white/10 transition-all group disabled:opacity-20">
                  <UploadCloud size={24} className="text-blue-400 mb-2 group-hover:scale-110 transition-transform" />
                  <span className="text-[8px] font-black uppercase tracking-widest">Unggah Paksa</span>
               </button>
-              <button onClick={onForcePull} className="flex flex-col items-center justify-center p-4 bg-white/5 border border-white/10 rounded-2xl hover:bg-white/10 transition-all group">
+              <button onClick={onForcePull} disabled={!user} className="flex flex-col items-center justify-center p-4 bg-white/5 border border-white/10 rounded-2xl hover:bg-white/10 transition-all group disabled:opacity-20">
                  <DownloadCloud size={24} className="text-emerald-400 mb-2 group-hover:scale-110 transition-transform" />
                  <span className="text-[8px] font-black uppercase tracking-widest">Ambil Paksa</span>
               </button>

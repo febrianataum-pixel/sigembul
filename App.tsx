@@ -9,10 +9,11 @@ import ArchivedResidents from './components/ArchivedResidents';
 import BirthManagement from './components/BirthManagement';
 import PregnancyManagement from './components/PregnancyManagement';
 import AdvancedSearch from './components/AdvancedSearch';
+import Login from './components/Login';
 import { Resident, AppConfig } from './types';
-import { initialResidents } from './mockData';
 import { initializeApp, getApp, getApps } from 'firebase/app';
 import { getFirestore, doc, setDoc, getDoc, onSnapshot } from 'firebase/firestore';
+import { getAuth, onAuthStateChanged, User, signOut } from 'firebase/auth';
 
 const App: React.FC = () => {
   const [residents, setResidents] = useState<Resident[]>(() => {
@@ -33,6 +34,8 @@ const App: React.FC = () => {
     };
   });
 
+  const [user, setUser] = useState<User | null>(null);
+  const [authLoading, setAuthLoading] = useState(true);
   const [activeTab, setActiveTab] = useState('dashboard');
   const [isSyncing, setIsSyncing] = useState(false);
   
@@ -40,37 +43,52 @@ const App: React.FC = () => {
   const isInternalUpdate = useRef(false);
   const lastUpdateToken = useRef<string | null>(null);
 
+  // Sync Theme
   useEffect(() => {
     const root = window.document.documentElement;
     if (config.theme === 'dark') root.classList.add('dark');
     else root.classList.remove('dark');
   }, [config.theme]);
 
-  // 1. Firebase Listener (DOWNLOAD)
+  // 1. Firebase Auth Listener
   useEffect(() => {
     if (!config.firebaseConfig?.enabled || !config.firebaseConfig.projectId) {
+      setAuthLoading(false);
+      return;
+    }
+
+    try {
+      const firebaseApp = getApps().length === 0 ? initializeApp(config.firebaseConfig) : getApp();
+      const auth = getAuth(firebaseApp);
+      
+      const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
+        setUser(currentUser);
+        setAuthLoading(false);
+      });
+      
+      return () => unsubscribe();
+    } catch (e) {
+      setAuthLoading(false);
+    }
+  }, [config.firebaseConfig?.enabled, config.firebaseConfig?.projectId]);
+
+  // 2. Firebase Database Listener (Hanya jika Login)
+  useEffect(() => {
+    if (!config.firebaseConfig?.enabled || !config.firebaseConfig.projectId || !user) {
       isHydrated.current = true;
       return;
     }
 
     let unsubRes = () => {};
     try {
-      const firebaseApp = getApps().length === 0 ? initializeApp(config.firebaseConfig) : getApp();
-      const db = getFirestore(firebaseApp);
-      
+      const db = getFirestore(getApp());
       unsubRes = onSnapshot(doc(db, "ngumbul_data", "residents_master"), (snap) => {
         if (snap.metadata.hasPendingWrites) return;
-
         if (snap.exists()) {
           const cloudData = snap.data();
-          // Jika data di cloud ada isinya, dan berbeda dengan lokal
           if (cloudData.lastUpdated !== lastUpdateToken.current) {
             lastUpdateToken.current = cloudData.lastUpdated;
             const cloudList = cloudData.list || [];
-            
-            // ANTI-WIPE: Hanya timpa lokal jika cloud benar-benar punya data atau memang kita mau kosongkan
-            // Tapi jika cloud kosong dan lokal ada isinya (kasus browser baru), 
-            // kita jangan set isHydrated dulu sampai kita putuskan siapa yang menang.
             isInternalUpdate.current = true;
             setResidents(cloudList);
             localStorage.setItem('siga_residents', JSON.stringify(cloudList));
@@ -85,20 +103,19 @@ const App: React.FC = () => {
       isHydrated.current = true;
     }
     return () => unsubRes();
-  }, [config.firebaseConfig?.enabled, config.firebaseConfig?.projectId]);
+  }, [user, config.firebaseConfig?.enabled]);
 
-  // 2. Firebase Sync (UPLOAD)
+  // 3. Firebase Sync (UPLOAD - Hanya jika Login)
   useEffect(() => {
     localStorage.setItem('siga_residents', JSON.stringify(residents));
 
-    if (!isHydrated.current) return;
+    if (!isHydrated.current || !user) return;
     if (isInternalUpdate.current) {
       isInternalUpdate.current = false;
       return;
     }
 
     if (config.firebaseConfig?.enabled && config.firebaseConfig.projectId) {
-      // JANGAN upload data kosong jika kita baru saja buka aplikasi (proteksi browser baru)
       if (residents.length === 0 && !lastUpdateToken.current) return;
 
       const timer = setTimeout(async () => {
@@ -119,11 +136,10 @@ const App: React.FC = () => {
       }, 3000); 
       return () => clearTimeout(timer);
     }
-  }, [residents]);
+  }, [residents, user]);
 
-  // Manual Cloud Actions
   const forcePush = async () => {
-    if (!config.firebaseConfig?.enabled) return;
+    if (!config.firebaseConfig?.enabled || !user) return;
     setIsSyncing(true);
     try {
       const db = getFirestore(getApp());
@@ -136,7 +152,7 @@ const App: React.FC = () => {
   };
 
   const forcePull = async () => {
-    if (!config.firebaseConfig?.enabled) return;
+    if (!config.firebaseConfig?.enabled || !user) return;
     setIsSyncing(true);
     try {
       const db = getFirestore(getApp());
@@ -150,6 +166,32 @@ const App: React.FC = () => {
     finally { setIsSyncing(false); }
   };
 
+  const handleLogout = async () => {
+    try {
+      const auth = getAuth(getApp());
+      await signOut(auth);
+      setUser(null);
+    } catch (e) {
+      alert("Gagal Keluar");
+    }
+  };
+
+  if (authLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-slate-50 dark:bg-slate-950">
+        <div className="animate-pulse flex flex-col items-center">
+          <div className="w-16 h-16 bg-blue-600 rounded-2xl mb-4"></div>
+          <div className="h-4 w-32 bg-slate-200 dark:bg-slate-800 rounded"></div>
+        </div>
+      </div>
+    );
+  }
+
+  // Cek apakah butuh login
+  if (config.firebaseConfig?.enabled && !user) {
+    return <Login config={config} />;
+  }
+
   const renderContent = () => {
     const activeResidents = residents.filter(r => r.status === 'Aktif');
     switch (activeTab) {
@@ -160,7 +202,7 @@ const App: React.FC = () => {
       case 'kehamilan': return <PregnancyManagement residents={residents} setResidents={setResidents} />;
       case 'arsip': return <ArchivedResidents residents={residents} setResidents={setResidents} />;
       case 'rekap': return <RecapIndicators residents={activeResidents} config={config} />;
-      case 'profil': return <AppSettings config={config} setConfig={setConfig} onForcePush={forcePush} onForcePull={forcePull} />;
+      case 'profil': return <AppSettings config={config} setConfig={setConfig} onForcePush={forcePush} onForcePull={forcePull} user={user} onLogout={handleLogout} />;
       default: return <Dashboard residents={activeResidents} />;
     }
   };
