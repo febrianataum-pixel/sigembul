@@ -21,8 +21,6 @@ import {
   X,
   Users,
   Search,
-  Eye,
-  Download,
   Filter,
   Printer,
   FileText,
@@ -55,18 +53,9 @@ const RecapIndicators: React.FC<RecapIndicatorsProps> = ({ residents = [], confi
   const [selectedBNBA, setSelectedBNBA] = useState<{ label: string, categoryKey: string, categoryValue: string } | null>(null);
   const [bnbaSearch, setBnbaSearch] = useState('');
 
-  const dusunList = useMemo(() => 
-    Array.from(new Set(residents.map(r => r.dusun))).sort()
-  , [residents]);
-
-  const filteredForChart = useMemo(() => {
-    if (!dusunFilter) return residents;
-    return residents.filter(r => r.dusun === dusunFilter);
-  }, [residents, dusunFilter]);
-
-  const totalPregnant = useMemo(() => {
-    return filteredForChart.filter(r => r.isPregnant).length;
-  }, [filteredForChart]);
+  const dusunList = useMemo(() => Array.from(new Set(residents.map(r => r.dusun))).sort(), [residents]);
+  const filteredForChart = useMemo(() => dusunFilter ? residents.filter(r => r.dusun === dusunFilter) : residents, [residents, dusunFilter]);
+  const totalPregnant = useMemo(() => filteredForChart.filter(r => r.isPregnant).length, [filteredForChart]);
 
   const getRecapData = (key: string) => {
     const counts = filteredForChart.reduce((acc, r) => {
@@ -92,124 +81,49 @@ const RecapIndicators: React.FC<RecapIndicatorsProps> = ({ residents = [], confi
     if (!data || !selectedIndicator) return;
     const item = INDICATORS_CONFIG.find(i => i.id === selectedIndicator);
     if (!item) return;
-
-    setSelectedBNBA({
-      label: data.name,
-      categoryKey: item.key,
-      categoryValue: data.name
-    });
+    setSelectedBNBA({ label: data.name, categoryKey: item.key, categoryValue: data.name });
     setBnbaSearch('');
   };
 
   const bnbaList = useMemo(() => {
     if (!selectedBNBA) return [];
     let baseList = filteredForChart.filter(r => {
-      if (selectedBNBA.categoryKey === 'ageGroup') {
-        return getAgeGroup(calculateAge(r.birthDate)) === selectedBNBA.categoryValue;
-      }
+      if (selectedBNBA.categoryKey === 'ageGroup') return getAgeGroup(calculateAge(r.birthDate)) === selectedBNBA.categoryValue;
       return String(r[selectedBNBA.categoryKey as keyof Resident]) === selectedBNBA.categoryValue;
     });
-
     if (bnbaSearch) {
       const s = bnbaSearch.toLowerCase();
-      baseList = baseList.filter(r => 
-        r.fullName.toLowerCase().includes(s) || r.nik.includes(s)
-      );
+      baseList = baseList.filter(r => r.fullName.toLowerCase().includes(s) || r.nik.includes(s));
     }
-
     return baseList.sort((a, b) => a.fullName.localeCompare(b.fullName));
   }, [selectedBNBA, filteredForChart, bnbaSearch]);
-
-  const handleDownloadBNBAPDF = () => {
-    if (!selectedBNBA || bnbaList.length === 0) return;
-
-    const doc = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
-    
-    doc.setFontSize(14);
-    doc.setFont('helvetica', 'bold');
-    doc.text('PEMERINTAH KABUPATEN BLORA', 105, 15, { align: 'center' });
-    doc.setFontSize(12);
-    doc.text('KECAMATAN TODANAN - DESA NGUMBUL', 105, 21, { align: 'center' });
-    doc.setFontSize(8);
-    doc.setFont('helvetica', 'normal');
-    doc.text('Alamat: Jl. Raya Todanan-Ngumbul KM. 05, Desa Ngumbul, Kec. Todanan, Kab. Blora (58256)', 105, 26, { align: 'center' });
-    doc.setLineWidth(0.5);
-    doc.line(20, 28, 190, 28);
-    
-    doc.setFontSize(11);
-    doc.setFont('helvetica', 'bold');
-    const indicatorLabel = INDICATORS_CONFIG.find(i => i.id === selectedIndicator)?.label || '';
-    doc.text(`DAFTAR PENDUDUK (BNBA) - ${indicatorLabel.toUpperCase()}`, 105, 38, { align: 'center' });
-    doc.setFontSize(10);
-    doc.text(`KATEGORI: ${selectedBNBA.label.toUpperCase()}`, 105, 43, { align: 'center' });
-    
-    doc.setFontSize(8);
-    doc.setFont('helvetica', 'normal');
-    doc.text(`Wilayah: ${dusunFilter || 'Seluruh Desa'}`, 20, 50);
-    doc.text(`Jumlah: ${bnbaList.length} Jiwa`, 190, 50, { align: 'right' });
-
-    const tableData = bnbaList.map((r, idx) => [
-      idx + 1,
-      r.fullName.toUpperCase(),
-      r.nik,
-      `${r.dusun}`,
-      `RT ${r.rt} / RW ${r.rw}`,
-      calculateAge(r.birthDate)
-    ]);
-
-    autoTable(doc, {
-      head: [['NO', 'NAMA LENGKAP', 'NIK', 'DUSUN', 'RT/RW', 'USIA']],
-      body: tableData,
-      startY: 55,
-      styles: { fontSize: 8, cellPadding: 2 },
-      headStyles: { fillColor: [15, 23, 42], textColor: [255, 255, 255], fontStyle: 'bold' },
-      columnStyles: {
-        0: { halign: 'center', cellWidth: 10 },
-        2: { fontStyle: 'normal' },
-        5: { halign: 'center', cellWidth: 15 }
-      }
-    });
-
-    const finalY = (doc as any).lastAutoTable.finalY + 15;
-    doc.setFontSize(9);
-    doc.text(`Ngumbul, ${new Date().toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' })}`, 150, finalY, { align: 'center' });
-    doc.setFont('helvetica', 'bold');
-    doc.text('KEPALA DESA NGUMBUL', 150, finalY + 5, { align: 'center' });
-    doc.text(config.villageHeadName.toUpperCase(), 150, finalY + 25, { align: 'center' });
-
-    doc.save(`BNBA_${selectedBNBA.label.replace(/[\s/]/g, '_')}_Ngumbul.pdf`);
-  };
 
   if (!selectedIndicator) {
     return (
       <div className="space-y-8 animate-in fade-in duration-500">
-        <div className="bg-white dark:bg-slate-900 p-8 rounded-[3rem] border border-slate-200 dark:border-slate-800 shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-6">
+        <div className="bg-white dark:bg-slate-900 p-8 rounded-[2.5rem] border border-slate-200 dark:border-slate-800 shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-6">
            <div className="flex items-center space-x-6">
-              <div className="w-16 h-16 bg-pink-100 dark:bg-pink-900/30 text-pink-600 dark:text-pink-400 rounded-3xl flex items-center justify-center shadow-inner">
+              <div className="w-16 h-16 bg-pink-100 dark:bg-pink-900/30 text-pink-600 dark:text-pink-400 rounded-3xl flex items-center justify-center">
                  <HeartPulse size={32} />
               </div>
               <div>
-                 <h2 className="text-xl font-black text-slate-900 dark:text-white uppercase tracking-tighter leading-none">Indikator Ibu Hamil</h2>
-                 <p className="text-slate-400 text-[10px] font-bold uppercase tracking-widest mt-2">Data KIA (Kesehatan Ibu dan Anak)</p>
+                 <h2 className="text-xl font-black text-slate-900 dark:text-white uppercase tracking-tighter">Indikator Ibu Hamil</h2>
+                 <p className="text-slate-400 text-[10px] font-bold uppercase tracking-widest mt-1">Data KIA (Kesehatan Ibu dan Anak)</p>
               </div>
            </div>
-           <div className="bg-pink-50 dark:bg-pink-950/20 border border-pink-100 dark:border-pink-900/30 px-10 py-4 rounded-3xl text-center">
-              <span className="text-3xl font-black text-pink-600 dark:text-pink-400 block leading-none">{totalPregnant}</span>
-              <span className="text-[9px] font-black text-pink-400 uppercase tracking-[0.2em] mt-1 block">Total Ibu Hamil Aktif</span>
+           <div className="bg-pink-50 dark:bg-pink-950/20 px-10 py-5 rounded-3xl text-center border border-pink-100 dark:border-pink-900/30">
+              <span className="text-3xl font-black text-pink-600 dark:text-pink-400 block">{totalPregnant}</span>
+              <span className="text-[10px] font-black text-pink-400 uppercase tracking-widest mt-1 block">Ibu Hamil Aktif</span>
            </div>
         </div>
 
-        <div className="grid grid-cols-2 md:grid-cols-3 gap-3 md:gap-6">
+        <div className="grid grid-cols-2 md:grid-cols-3 gap-6">
           {INDICATORS_CONFIG.map((item) => (
-            <button
-              key={item.id}
-              onClick={() => setSelectedIndicator(item.id)}
-              className="bg-white dark:bg-slate-900 p-5 md:p-10 rounded-2xl md:rounded-[3rem] border border-slate-200 dark:border-slate-800 shadow-sm flex flex-col items-center text-center space-y-4 transition-all hover:shadow-xl hover:scale-[1.03] group"
-            >
-              <div className={`${item.color} text-white p-4 md:p-8 rounded-2xl md:rounded-[2rem] shrink-0 shadow-lg shadow-current/10 group-hover:scale-110 transition-transform`}>
-                <item.icon size={24} className="md:w-10 md:h-10" />
+            <button key={item.id} onClick={() => setSelectedIndicator(item.id)} className="bg-white dark:bg-slate-900 p-8 rounded-[2.5rem] border border-slate-200 dark:border-slate-800 shadow-sm flex flex-col items-center text-center space-y-4 transition-all hover:scale-[1.03] group">
+              <div className={`${item.color} text-white p-6 rounded-2xl group-hover:scale-110 transition-transform shadow-lg`}>
+                <item.icon size={28} />
               </div>
-              <h3 className="text-[10px] md:text-base font-black text-slate-800 dark:text-white uppercase tracking-widest">{item.label}</h3>
+              <h3 className="text-sm font-black text-slate-800 dark:text-white uppercase tracking-widest">{item.label}</h3>
             </button>
           ))}
         </div>
@@ -218,62 +132,37 @@ const RecapIndicators: React.FC<RecapIndicatorsProps> = ({ residents = [], confi
   }
 
   return (
-    <div className="space-y-4 md:space-y-6 animate-in slide-in-from-right-4 duration-500">
-      <div className="bg-white dark:bg-slate-900 p-4 md:p-6 rounded-[2rem] border border-slate-200 dark:border-slate-800 shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-4">
-        <div className="flex items-center space-x-3">
-          <button onClick={() => { setSelectedIndicator(null); setDusunFilter(''); }} className="p-2.5 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-400 rounded-xl transition-all">
-            <ArrowLeft size={18} />
+    <div className="space-y-6 animate-in slide-in-from-right-4 duration-500">
+      <div className="bg-white dark:bg-slate-900 p-6 rounded-[2rem] border border-slate-200 dark:border-slate-800 shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-4">
+        <div className="flex items-center space-x-4">
+          <button onClick={() => setSelectedIndicator(null)} className="p-3 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 rounded-xl text-slate-600 dark:text-slate-400 transition-all">
+            <ArrowLeft size={20} />
           </button>
-          <h2 className="text-[11px] md:text-xl font-black uppercase tracking-widest text-slate-900 dark:text-white">{INDICATORS_CONFIG.find(i => i.id === selectedIndicator)?.label}</h2>
+          <h2 className="text-lg font-black uppercase tracking-widest text-slate-900 dark:text-white">{INDICATORS_CONFIG.find(i => i.id === selectedIndicator)?.label}</h2>
         </div>
-        
-        <div className="flex items-center space-x-2 bg-slate-100 dark:bg-slate-800 p-1.5 rounded-2xl border border-slate-200 dark:border-slate-700">
-           <div className="pl-3 pr-1 text-slate-400"><Filter size={14} /></div>
-           <select 
-             className="bg-transparent text-[10px] md:text-xs font-black uppercase outline-none px-2 py-1 cursor-pointer dark:text-white"
-             value={dusunFilter}
-             onChange={(e) => setDusunFilter(e.target.value)}
-           >
+        <div className="flex items-center space-x-3 bg-slate-50 dark:bg-slate-800 px-4 py-2 rounded-2xl border border-slate-200 dark:border-slate-700">
+           <Filter size={14} className="text-slate-400" />
+           <select className="bg-transparent text-xs font-black uppercase outline-none dark:text-white" value={dusunFilter} onChange={(e) => setDusunFilter(e.target.value)}>
              <option value="" className="dark:bg-slate-800">Seluruh Desa</option>
              {dusunList.map(d => <option key={d} value={d} className="dark:bg-slate-800">{d}</option>)}
            </select>
         </div>
       </div>
 
-      <div className="bg-white dark:bg-slate-900 p-6 md:p-12 rounded-[2.5rem] md:rounded-[4rem] border border-slate-200 dark:border-slate-800 shadow-sm relative overflow-hidden">
-         <div className="flex items-center justify-between mb-8 md:mb-12">
-            <div>
-              <h3 className="text-[9px] md:text-sm font-black text-slate-400 uppercase tracking-widest">Visualisasi Data</h3>
-              <p className="text-[8px] md:text-[10px] font-bold text-slate-400 mt-1 uppercase tracking-tighter">Wilayah: {dusunFilter || 'Seluruh Desa'}</p>
-            </div>
-            <span className="text-[8px] md:text-[10px] font-bold text-blue-600 dark:text-blue-400 uppercase bg-blue-50 dark:bg-blue-900/30 px-3 py-1 rounded-full border border-blue-100 dark:border-blue-800">Klik bar untuk rincian BNBA</span>
-         </div>
-         <div className="h-[400px] md:h-[600px]">
+      <div className="bg-white dark:bg-slate-900 p-8 md:p-12 rounded-[2.5rem] border border-slate-200 dark:border-slate-800 shadow-sm">
+         <div className="h-[400px] md:h-[500px]">
             <ResponsiveContainer width="100%" height="100%">
                <BarChart data={currentIndicatorData} layout="vertical" margin={{ left: -10, right: 30 }}>
                   <CartesianGrid strokeDasharray="3 3" horizontal={true} vertical={false} stroke="#334155" opacity={0.1} />
                   <XAxis type="number" hide />
-                  <YAxis dataKey="name" type="category" width={100} tick={{ fontSize: 9, fontWeight: 900, fill: '#64748b' }} axisLine={false} tickLine={false} />
-                  <Tooltip 
-                    cursor={{ fill: '#1e293b', opacity: 0.1 }} 
-                    content={({ active, payload }) => {
-                      if (active && payload?.length) {
-                        return (
-                          <div className="bg-slate-900 text-white p-3 rounded-xl shadow-2xl text-[10px] font-black uppercase">
-                            {payload[0].payload.name}: <span className="text-emerald-400">{payload[0].value} Jiwa</span>
-                          </div>
-                        );
-                      }
-                      return null;
-                    }}
-                  />
-                  <Bar 
-                    dataKey="value" 
-                    radius={[0, 10, 10, 0]} 
-                    barSize={24} 
-                    className="cursor-pointer hover:opacity-80 transition-opacity"
-                    onClick={(data) => handleBarClick(data)}
-                  >
+                  <YAxis dataKey="name" type="category" width={100} tick={{ fontSize: 10, fontWeight: 800, fill: '#64748b' }} axisLine={false} tickLine={false} />
+                  <Tooltip cursor={{ fill: '#1e293b', opacity: 0.1 }} content={({ active, payload }) => {
+                    if (active && payload?.length) {
+                      return <div className="bg-slate-900 text-white p-3 rounded-xl shadow-2xl text-[10px] font-black uppercase">{payload[0].payload.name}: <span className="text-emerald-400">{payload[0].value} Jiwa</span></div>;
+                    }
+                    return null;
+                  }} />
+                  <Bar dataKey="value" radius={[0, 10, 10, 0]} barSize={24} className="cursor-pointer" onClick={(data) => handleBarClick(data)}>
                     {currentIndicatorData.map((e, i) => <Cell key={i} fill={COLORS[i % COLORS.length]} />)}
                   </Bar>
                </BarChart>
@@ -282,81 +171,41 @@ const RecapIndicators: React.FC<RecapIndicatorsProps> = ({ residents = [], confi
       </div>
 
       {selectedBNBA && (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center p-3 md:p-6 bg-slate-900/60 backdrop-blur-md animate-in fade-in">
-           <div className="bg-white dark:bg-slate-900 rounded-[2rem] md:rounded-[3rem] shadow-2xl w-full max-w-4xl h-[90vh] flex flex-col border border-slate-200 dark:border-slate-800 animate-in zoom-in-95">
-              <div className="p-6 md:p-8 bg-slate-950 text-white flex justify-between items-center shrink-0">
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-md">
+           <div className="bg-white dark:bg-slate-900 rounded-[2.5rem] shadow-2xl w-full max-w-4xl h-[90vh] flex flex-col border border-slate-200 dark:border-slate-800 animate-in zoom-in-95">
+              <div className="p-8 bg-slate-950 text-white flex justify-between items-center shrink-0">
                  <div className="flex items-center space-x-4">
-                    <div className="w-12 h-12 bg-emerald-600 rounded-2xl flex items-center justify-center shadow-lg">
-                       <Users size={24} />
-                    </div>
+                    <div className="w-12 h-12 bg-emerald-600 rounded-2xl flex items-center justify-center shadow-lg"><Users size={24} /></div>
                     <div>
-                       <h4 className="text-[11px] md:text-base font-black uppercase tracking-widest leading-none">BNBA: {selectedBNBA.label}</h4>
-                       <p className="text-[8px] md:text-[10px] text-slate-400 font-bold uppercase mt-2 tracking-widest">{bnbaList.length} Jiwa Ditemukan ({dusunFilter || 'Seluruh Desa'})</p>
+                       <h4 className="text-base font-black uppercase tracking-widest">BNBA: {selectedBNBA.label}</h4>
+                       <p className="text-[10px] text-slate-400 font-bold uppercase mt-1">{bnbaList.length} Jiwa Ditemukan</p>
                     </div>
                  </div>
-                 <div className="flex items-center space-x-2">
-                    <button 
-                      onClick={handleDownloadBNBAPDF}
-                      className="p-3 bg-emerald-600 hover:bg-emerald-700 text-white rounded-2xl transition-all flex items-center space-x-2 shadow-lg shadow-emerald-900/20"
-                      title="Unduh PDF"
-                    >
-                      <Printer size={18} />
-                      <span className="hidden sm:inline text-[9px] font-black uppercase tracking-widest">Cetak PDF</span>
-                    </button>
-                    <button onClick={() => setSelectedBNBA(null)} className="p-3 bg-slate-800 hover:bg-slate-700 rounded-2xl transition-all">
-                       <X size={20} />
-                    </button>
-                 </div>
+                 <button onClick={() => setSelectedBNBA(null)} className="p-3 bg-slate-800 hover:bg-slate-700 rounded-2xl transition-all"><X size={20} /></button>
               </div>
-
-              <div className="flex-1 overflow-hidden flex flex-col bg-slate-50/50 dark:bg-slate-900/50">
-                 <div className="p-4 md:p-6 bg-white dark:bg-slate-900 border-b border-slate-100 dark:border-slate-800 flex items-center">
-                    <div className="flex-1 flex items-center bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-4 py-2.5">
-                       <Search size={16} className="text-slate-400 mr-3" />
-                       <input 
-                         type="text" 
-                         placeholder="Cari nama dalam daftar ini..." 
-                         className="bg-transparent text-xs font-bold outline-none w-full dark:text-white"
-                         value={bnbaSearch}
-                         onChange={(e) => setBnbaSearch(e.target.value)}
-                       />
+              <div className="flex-1 overflow-hidden flex flex-col">
+                 <div className="p-6 bg-white dark:bg-slate-900 border-b border-slate-100 dark:border-slate-800">
+                    <div className="flex items-center bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl px-5 py-3">
+                       <Search size={18} className="text-slate-400 mr-3" />
+                       <input type="text" placeholder="Cari nama dalam daftar ini..." className="bg-transparent text-sm font-bold outline-none w-full dark:text-white" value={bnbaSearch} onChange={(e) => setBnbaSearch(e.target.value)} />
                     </div>
                  </div>
-                 
-                 <div className="flex-1 overflow-auto p-4 md:p-8">
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                 <div className="flex-1 overflow-auto p-8 bg-slate-50/30 dark:bg-slate-900/50">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                        {bnbaList.map((r, idx) => (
-                          <div key={idx} className="bg-white dark:bg-slate-800 p-4 rounded-2xl border border-slate-100 dark:border-slate-700 shadow-sm flex items-center space-x-4 hover:border-blue-500 transition-all group">
-                             <div className="w-10 h-10 bg-slate-100 dark:bg-slate-700 rounded-xl flex items-center justify-center text-[10px] font-black text-slate-400 dark:text-slate-500 group-hover:bg-blue-600 group-hover:text-white transition-all shrink-0">
-                                {idx + 1}
-                             </div>
+                          <div key={idx} className="bg-white dark:bg-slate-800 p-5 rounded-3xl border border-slate-100 dark:border-slate-700 shadow-sm flex items-center space-x-4">
+                             <div className="w-10 h-10 bg-slate-100 dark:bg-slate-700 rounded-xl flex items-center justify-center text-[10px] font-black text-slate-400 shrink-0">{idx + 1}</div>
                              <div className="min-w-0 flex-1">
-                                <h5 className="text-[11px] font-black text-slate-900 dark:text-white uppercase truncate leading-none mb-1">{r.fullName}</h5>
-                                <div className="flex items-center space-x-3 text-[9px] font-bold text-slate-400">
-                                   <span className="font-mono">{r.nik}</span>
-                                   <span className="uppercase text-blue-500 font-black">{r.dusun}</span>
-                                </div>
+                                <h5 className="text-sm font-black text-slate-900 dark:text-white uppercase truncate">{r.fullName}</h5>
+                                <div className="text-[10px] text-slate-400 font-bold uppercase mt-1">{r.dusun} | RT {r.rt}</div>
                              </div>
-                             <div className="hidden sm:block text-[9px] font-black text-slate-300 dark:text-slate-700 uppercase">RT {r.rt}</div>
                           </div>
                        ))}
-                       {bnbaList.length === 0 && (
-                         <div className="col-span-full py-20 text-center">
-                            <FileText size={48} className="mx-auto text-slate-200 dark:text-slate-700 mb-4" />
-                            <p className="text-[10px] font-black text-slate-400 dark:text-slate-600 uppercase tracking-widest">Daftar nama tidak ditemukan.</p>
-                         </div>
-                       )}
                     </div>
                  </div>
               </div>
-
-              <div className="p-6 md:p-8 border-t border-slate-100 dark:border-slate-800 bg-white dark:bg-slate-900 flex justify-center shrink-0">
-                 <button 
-                   onClick={() => setSelectedBNBA(null)}
-                   className="px-12 py-4 bg-slate-950 text-white rounded-[1.5rem] text-[10px] font-black uppercase tracking-widest hover:opacity-90 shadow-2xl transition-all"
-                 >
-                   Tutup Daftar BNBA
-                 </button>
+              <div className="p-8 border-t border-slate-100 dark:border-slate-800 bg-white dark:bg-slate-900 flex justify-center shrink-0">
+                 <button onClick={() => setSelectedBNBA(null)} className="px-12 py-4 bg-slate-950 text-white rounded-[1.5rem] text-xs font-black uppercase tracking-widest hover:opacity-90 transition-all">Tutup BNBA</button>
               </div>
            </div>
         </div>

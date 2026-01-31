@@ -15,7 +15,6 @@ import { initializeApp, getApp, getApps } from 'firebase/app';
 import { getFirestore, doc, setDoc, onSnapshot } from 'firebase/firestore';
 
 const App: React.FC = () => {
-  // Inisialisasi State
   const [residents, setResidents] = useState<Resident[]>(() => {
     const saved = localStorage.getItem('siga_residents');
     return saved ? JSON.parse(saved) : initialResidents;
@@ -37,14 +36,12 @@ const App: React.FC = () => {
   const [activeTab, setActiveTab] = useState('dashboard');
   const [isSyncing, setIsSyncing] = useState(false);
   
-  // Refs untuk manajemen sinkronisasi
-  const skipNextResidentSync = useRef(false);
-  const isInitialCloudLoadResident = useRef(false);
-  const isInitialCloudLoadConfig = useRef(false);
-  const lastCloudResidentUpdate = useRef<string | null>(null);
-  const lastCloudConfigUpdate = useRef<string | null>(null);
+  // Refs untuk manajemen alur data yang presisi
+  const isInitialLoadDone = useRef(false);
+  const isWritingToCloud = useRef(false);
+  const lastKnownCloudTimestamp = useRef<string | null>(null);
 
-  // Sync Theme with Document Root
+  // Sync Theme dengan HTML Root
   useEffect(() => {
     const root = window.document.documentElement;
     if (config.theme === 'dark') {
@@ -54,12 +51,10 @@ const App: React.FC = () => {
     }
   }, [config.theme]);
 
-  // 1. Setup Firebase Listeners
+  // 1. Setup Firebase Listener (DOWNLOAD)
   useEffect(() => {
     if (!config.firebaseConfig?.enabled || !config.firebaseConfig.projectId) {
-      // Jika mode lokal, anggap load selesai agar bisa simpan ke localstorage
-      isInitialCloudLoadResident.current = true;
-      isInitialCloudLoadConfig.current = true;
+      isInitialLoadDone.current = true;
       return;
     }
 
@@ -67,105 +62,108 @@ const App: React.FC = () => {
     let unsubConf = () => {};
 
     try {
-      const firebaseApp = getApps().length === 0 
-        ? initializeApp(config.firebaseConfig) 
-        : getApp();
+      const firebaseApp = getApps().length === 0 ? initializeApp(config.firebaseConfig) : getApp();
       const db = getFirestore(firebaseApp);
       
-      // Listener Data Penduduk
       unsubRes = onSnapshot(doc(db, "ngumbul_data", "residents_master"), (snap) => {
+        // JANGAN TIMPA jika kita sedang dalam proses menulis atau data berasal dari internal cache (pending writes)
+        if (snap.metadata.hasPendingWrites || isWritingToCloud.current) return;
+
         if (snap.exists()) {
           const data = snap.data();
-          if (data.lastUpdated !== lastCloudResidentUpdate.current) {
-            lastCloudResidentUpdate.current = data.lastUpdated;
-            skipNextResidentSync.current = true;
-            setResidents(data.list || []);
-            localStorage.setItem('siga_residents', JSON.stringify(data.list || []));
+          // Validasi apakah data di cloud memang lebih baru atau berbeda dari yang kita tahu
+          if (data.lastUpdated !== lastKnownCloudTimestamp.current) {
+            lastKnownCloudTimestamp.current = data.lastUpdated;
+            const cloudList = data.list || [];
+            
+            // Update state hanya jika ada perbedaan data (mencegah loop)
+            setResidents(cloudList);
+            localStorage.setItem('siga_residents', JSON.stringify(cloudList));
           }
+        } else {
+          // Jika dokumen belum ada di cloud, kita tandai load selesai agar bisa upload data lokal yang ada
+          console.log("Cloud storage empty, ready for first upload.");
         }
-        // Tandai bahwa kita sudah mendengar dari Cloud pertama kali
-        isInitialCloudLoadResident.current = true;
+        isInitialLoadDone.current = true;
       }, (err) => {
-        console.error("Cloud error, falling back to local:", err);
-        isInitialCloudLoadResident.current = true;
+        console.error("Firebase Sync Error:", err);
+        isInitialLoadDone.current = true;
       });
 
-      // Listener Konfigurasi
       unsubConf = onSnapshot(doc(db, "ngumbul_data", "app_config"), (snap) => {
+        if (snap.metadata.hasPendingWrites || isWritingToCloud.current) return;
         if (snap.exists()) {
           const data = snap.data();
-          if (data.lastUpdated !== lastCloudConfigUpdate.current) {
-            lastCloudConfigUpdate.current = data.lastUpdated;
-            setConfig(prev => {
-              const newConf = { ...prev, ...data, firebaseConfig: prev.firebaseConfig, theme: data.theme || prev.theme };
-              localStorage.setItem('siga_config', JSON.stringify(newConf));
-              return newConf;
-            });
-          }
+          setConfig(prev => {
+            const newConf = { ...prev, ...data, firebaseConfig: prev.firebaseConfig };
+            localStorage.setItem('siga_config', JSON.stringify(newConf));
+            return newConf;
+          });
         }
-        isInitialCloudLoadConfig.current = true;
-      }, () => {
-        isInitialCloudLoadConfig.current = true;
       });
 
     } catch (e) {
       console.error("Firebase Connection Error:", e);
-      isInitialCloudLoadResident.current = true;
-      isInitialCloudLoadConfig.current = true;
+      isInitialLoadDone.current = true;
     }
 
     return () => { unsubRes(); unsubConf(); };
   }, [config.firebaseConfig?.enabled, config.firebaseConfig?.projectId]);
 
-  // 2. Sync Residents to Cloud
+  // 2. Upload Data ke Cloud (UPLOAD)
   useEffect(() => {
+    // Simpan ke lokal selalu
     localStorage.setItem('siga_residents', JSON.stringify(residents));
     
-    // GUARD: Jangan upload jika Firebase aktif tapi kita belum selesai narik data awal dari Cloud
-    if (!isInitialCloudLoadResident.current) return;
+    // GUARD: Cegah upload jika load awal belum selesai atau Firebase tidak aktif
+    if (!isInitialLoadDone.current || !config.firebaseConfig?.enabled || !config.firebaseConfig.projectId) return;
 
-    if (config.firebaseConfig?.enabled && config.firebaseConfig.projectId) {
-      if (skipNextResidentSync.current) {
-        skipNextResidentSync.current = false;
-        return;
+    const timer = setTimeout(async () => {
+      setIsSyncing(true);
+      isWritingToCloud.current = true; // Kunci listener download
+
+      try {
+        const db = getFirestore(getApp());
+        const ts = new Date().toISOString();
+        
+        // Catat timestamp yang akan kita kirim agar listener tahu ini data kita
+        lastKnownCloudTimestamp.current = ts;
+
+        await setDoc(doc(db, "ngumbul_data", "residents_master"), { 
+          list: residents,
+          lastUpdated: ts
+        });
+        
+        console.log("Cloud sync successful at", ts);
+      } catch (e) { 
+        console.error("Upload failed:", e); 
+      } finally {
+        // Berikan jeda kecil sebelum membuka kunci agar metadata snap sempat diproses
+        setTimeout(() => {
+          isWritingToCloud.current = false;
+          setIsSyncing(false);
+        }, 1000);
       }
+    }, 2000); // Debounce 2 detik (sangat penting untuk import massal)
 
-      const timer = setTimeout(async () => {
-        setIsSyncing(true);
-        try {
-          const db = getFirestore(getApp());
-          const ts = new Date().toISOString();
-          lastCloudResidentUpdate.current = ts;
-          await setDoc(doc(db, "ngumbul_data", "residents_master"), { 
-            list: residents,
-            lastUpdated: ts
-          });
-        } catch (e) { console.error("Upload Error:", e); }
-        finally { setTimeout(() => setIsSyncing(false), 500); }
-      }, 2000); // Debounce lebih lama untuk memastikan kestabilan
-      return () => clearTimeout(timer);
-    }
+    return () => clearTimeout(timer);
   }, [residents]);
 
-  // 3. Sync Config to Cloud
+  // 3. Upload Config (Hanya parameter publik)
   useEffect(() => {
-    if (!isInitialCloudLoadConfig.current) return;
-
-    if (config.firebaseConfig?.enabled && config.firebaseConfig.projectId) {
-      const timer = setTimeout(async () => {
-        try {
-          const db = getFirestore(getApp());
-          const ts = new Date().toISOString();
-          lastCloudConfigUpdate.current = ts;
-          const { firebaseConfig, ...publicConfig } = config;
-          await setDoc(doc(db, "ngumbul_data", "app_config"), { 
-            ...publicConfig,
-            lastUpdated: ts
-          });
-        } catch (e) { console.error(e); }
-      }, 1000);
-      return () => clearTimeout(timer);
-    }
+    if (!isInitialLoadDone.current || !config.firebaseConfig?.enabled || !config.firebaseConfig.projectId) return;
+    
+    const timer = setTimeout(async () => {
+      try {
+        const db = getFirestore(getApp());
+        const { firebaseConfig, ...publicConfig } = config;
+        await setDoc(doc(db, "ngumbul_data", "app_config"), { 
+          ...publicConfig,
+          lastUpdated: new Date().toISOString()
+        });
+      } catch (e) { console.error(e); }
+    }, 1500);
+    return () => clearTimeout(timer);
   }, [config]);
 
   const renderContent = () => {
