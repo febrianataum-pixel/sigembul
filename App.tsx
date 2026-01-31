@@ -8,6 +8,7 @@ import AppSettings from './components/AppSettings';
 import ArchivedResidents from './components/ArchivedResidents';
 import BirthManagement from './components/BirthManagement';
 import PregnancyManagement from './components/PregnancyManagement';
+import AdvancedSearch from './components/AdvancedSearch';
 import { Resident, AppConfig } from './types';
 import { initialResidents } from './mockData';
 import { initializeApp, getApp, getApps } from 'firebase/app';
@@ -127,6 +128,8 @@ const App: React.FC = () => {
         return <Dashboard residents={activeResidents} />;
       case 'penduduk':
         return <PopulationManagement residents={residents} setResidents={setResidents} config={config} />;
+      case 'pencarian':
+        return <AdvancedSearch residents={activeResidents} setResidents={setResidents} config={config} />;
       case 'kelahiran':
         return <BirthManagement residents={residents} setResidents={setResidents} />;
       case 'kehamilan':

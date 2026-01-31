@@ -3,6 +3,7 @@ import React, { useState } from 'react';
 import { 
   LayoutDashboard, 
   Users, 
+  Search as SearchIcon,
   BarChart3, 
   Settings, 
   Menu, 
@@ -34,6 +35,7 @@ const Layout: React.FC<LayoutProps> = ({ children, activeTab, setActiveTab, conf
   const menuItems = [
     { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard },
     { id: 'penduduk', label: 'Data Penduduk', icon: Users },
+    { id: 'pencarian', label: 'Pencarian', icon: SearchIcon },
     { id: 'kelahiran', label: 'Kelahiran', icon: Baby },
     { id: 'kehamilan', label: 'Kehamilan', icon: HeartPulse },
     { id: 'arsip', label: 'Arsip', icon: Archive },

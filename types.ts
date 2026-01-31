@@ -4,6 +4,7 @@ export type MaritalStatus = 'Kawin' | 'Belum Kawin' | 'Cerai Hidup' | 'Cerai Mat
 export type Education = 'Tidak/Belum Sekolah' | 'SD' | 'SMP' | 'SMA' | 'Diploma' | 'Sarjana' | 'Pascasarjana';
 export type BloodType = 'A' | 'B' | 'AB' | 'O' | 'Tidak Tahu';
 export type ResidentStatus = 'Aktif' | 'Meninggal' | 'Pindah' | 'Terhapus';
+export type PregnancyRisk = 'Tinggi' | 'Sedang' | 'Rendah';
 
 export interface Resident {
   id: string;
@@ -33,6 +34,7 @@ export interface Resident {
   // Pregnancy Fields
   isPregnant?: boolean;
   pregnancyStartDate?: string;
+  pregnancyRisk?: PregnancyRisk;
 }
 
 export interface FirebaseConfig {

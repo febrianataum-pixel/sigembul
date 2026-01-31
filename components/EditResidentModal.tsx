@@ -1,7 +1,7 @@
 
 import React, { useState } from 'react';
-import { X, Save, User, AlertCircle, HeartPulse } from 'lucide-react';
-import { Resident } from '../types';
+import { X, Save, User, AlertCircle, HeartPulse, ShieldAlert, ShieldCheck, Stethoscope } from 'lucide-react';
+import { Resident, PregnancyRisk } from '../types';
 
 interface EditResidentModalProps {
   resident: Resident;
@@ -16,6 +16,7 @@ const EditResidentModal: React.FC<EditResidentModalProps> = ({ resident, onClose
     e.preventDefault();
     if (formData.nik.length !== 16) return alert("NIK harus tepat 16 digit!");
     if (formData.noKK.length !== 16) return alert("Nomor KK harus tepat 16 digit!");
+    if (formData.isPregnant && !formData.pregnancyRisk) return alert("Harap pilih klasifikasi resiko kehamilan!");
     onSave(formData);
   };
 
@@ -30,6 +31,10 @@ const EditResidentModal: React.FC<EditResidentModalProps> = ({ resident, onClose
     }
     
     setFormData(prev => ({ ...prev, [name]: finalValue }));
+  };
+
+  const setRisk = (risk: PregnancyRisk) => {
+    setFormData(prev => ({ ...prev, pregnancyRisk: risk }));
   };
 
   const RELATIONSHIP_OPTIONS = [
@@ -57,7 +62,7 @@ const EditResidentModal: React.FC<EditResidentModalProps> = ({ resident, onClose
     "30. Petani", "31. Peternak", "32. Sopir", "33. Tidak Mempunyai Pekerjaan Tetap", 
     "34. Tukang Batu", "35. Tukang Jahit", "36. Tukang Kayu", "37. Tukang Kue", 
     "38. Tukang Listrik", "39. Wirausahawan/Wiraswasta", "40. Perangkat Desa", 
-    "41. Lainnya (jika pekerjaan tidak tercantum)"
+    "41. Lainnya"
   ];
 
   const isFemale = formData.gender.includes('Perempuan');
@@ -158,30 +163,6 @@ const EditResidentModal: React.FC<EditResidentModalProps> = ({ resident, onClose
             </div>
           </div>
 
-          <div className="space-y-6">
-            <h4 className="text-xs font-black text-blue-600 uppercase tracking-[0.2em] border-b border-slate-100 pb-2">III. Status & Pekerjaan</h4>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <div>
-                <label className="block text-[10px] font-black text-slate-400 mb-2 uppercase tracking-widest">Status Perkawinan</label>
-                <select name="maritalStatus" value={formData.maritalStatus} onChange={handleChange} className="w-full bg-white border border-slate-200 rounded-2xl px-4 py-3 text-sm font-bold outline-none">
-                  {MARITAL_OPTIONS.map(opt => <option key={opt} value={opt}>{opt}</option>)}
-                </select>
-              </div>
-              <div>
-                <label className="block text-[10px] font-black text-slate-400 mb-2 uppercase tracking-widest">Pendidikan Tertinggi</label>
-                <select name="education" value={formData.education} onChange={handleChange} className="w-full bg-white border border-slate-200 rounded-2xl px-4 py-3 text-sm font-bold outline-none">
-                  {EDUCATION_OPTIONS.map(opt => <option key={opt} value={opt}>{opt}</option>)}
-                </select>
-              </div>
-              <div className="md:col-span-2">
-                <label className="block text-[10px] font-black text-slate-400 mb-2 uppercase tracking-widest">Pekerjaan</label>
-                <select name="job" value={formData.job} onChange={handleChange} className="w-full bg-white border border-slate-200 rounded-2xl px-4 py-3 text-sm font-bold outline-none">
-                  {JOB_OPTIONS.map(opt => <option key={opt} value={opt}>{opt}</option>)}
-                </select>
-              </div>
-            </div>
-          </div>
-
           {/* Pregnancy Section */}
           {isFemale && (
             <div className="space-y-6">
@@ -189,7 +170,7 @@ const EditResidentModal: React.FC<EditResidentModalProps> = ({ resident, onClose
                 <HeartPulse size={14} className="mr-2" /> IV. Status Kehamilan
               </h4>
               <div className="bg-pink-50/50 p-6 rounded-[2rem] border border-pink-100">
-                <div className="flex items-center justify-between mb-4">
+                <div className="flex items-center justify-between mb-6">
                   <div>
                     <p className="text-[11px] font-black text-pink-700 uppercase">Apakah Sedang Hamil?</p>
                     <p className="text-[9px] text-slate-400 font-bold uppercase mt-1">Aktifkan jika penduduk terdeteksi hamil untuk monitoring KIA</p>
@@ -207,16 +188,74 @@ const EditResidentModal: React.FC<EditResidentModalProps> = ({ resident, onClose
                 </div>
                 
                 {formData.isPregnant && (
-                  <div className="animate-in slide-in-from-top-2 duration-300">
-                    <label className="block text-[10px] font-black text-pink-700 mb-2 uppercase tracking-widest">Tanggal Mulai Hamil / HPHT</label>
-                    <input 
-                      type="date" 
-                      name="pregnancyStartDate" 
-                      value={formData.pregnancyStartDate || ''} 
-                      onChange={handleChange} 
-                      className="w-full bg-white border border-pink-200 rounded-2xl px-4 py-3 text-sm font-bold outline-none focus:ring-4 focus:ring-pink-500/10" 
-                      required={formData.isPregnant}
-                    />
+                  <div className="space-y-6 animate-in slide-in-from-top-4 duration-300">
+                    <div>
+                      <label className="block text-[10px] font-black text-pink-700 mb-2 uppercase tracking-widest">Tanggal Mulai Hamil / HPHT</label>
+                      <input 
+                        type="date" 
+                        name="pregnancyStartDate" 
+                        value={formData.pregnancyStartDate || ''} 
+                        onChange={handleChange} 
+                        className="w-full bg-white border border-pink-200 rounded-2xl px-4 py-3 text-sm font-bold outline-none focus:ring-4 focus:ring-pink-500/10" 
+                        required={formData.isPregnant}
+                      />
+                    </div>
+
+                    <div className="space-y-3">
+                      <label className="block text-[10px] font-black text-pink-700 mb-1 uppercase tracking-widest">Klasifikasi Resiko (KIA)</label>
+                      <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                        <button 
+                          type="button" 
+                          onClick={() => setRisk('Tinggi')}
+                          className={`p-4 rounded-2xl border transition-all text-left flex flex-col space-y-1 ${
+                            formData.pregnancyRisk === 'Tinggi' 
+                              ? 'bg-rose-500 border-rose-600 text-white shadow-lg' 
+                              : 'bg-white border-slate-200 text-slate-400 hover:border-rose-200'
+                          }`}
+                        >
+                          <div className="flex items-center justify-between">
+                            <span className="text-[10px] font-black uppercase tracking-widest">Merah</span>
+                            <ShieldAlert size={16} />
+                          </div>
+                          <span className="text-[11px] font-black uppercase">Resiko Tinggi</span>
+                          <span className="text-[8px] font-bold opacity-80">Rujukan Rumah Sakit</span>
+                        </button>
+
+                        <button 
+                          type="button" 
+                          onClick={() => setRisk('Sedang')}
+                          className={`p-4 rounded-2xl border transition-all text-left flex flex-col space-y-1 ${
+                            formData.pregnancyRisk === 'Sedang' 
+                              ? 'bg-amber-400 border-amber-500 text-slate-900 shadow-lg' 
+                              : 'bg-white border-slate-200 text-slate-400 hover:border-amber-200'
+                          }`}
+                        >
+                          <div className="flex items-center justify-between">
+                            <span className="text-[10px] font-black uppercase tracking-widest">Kuning</span>
+                            <Stethoscope size={16} />
+                          </div>
+                          <span className="text-[11px] font-black uppercase">Resiko Sedang</span>
+                          <span className="text-[8px] font-bold opacity-80">Rujukan Puskesmas</span>
+                        </button>
+
+                        <button 
+                          type="button" 
+                          onClick={() => setRisk('Rendah')}
+                          className={`p-4 rounded-2xl border transition-all text-left flex flex-col space-y-1 ${
+                            formData.pregnancyRisk === 'Rendah' 
+                              ? 'bg-emerald-500 border-emerald-600 text-white shadow-lg' 
+                              : 'bg-white border-slate-200 text-slate-400 hover:border-emerald-200'
+                          }`}
+                        >
+                          <div className="flex items-center justify-between">
+                            <span className="text-[10px] font-black uppercase tracking-widest">Hijau</span>
+                            <ShieldCheck size={16} />
+                          </div>
+                          <span className="text-[11px] font-black uppercase">Tanpa Resiko</span>
+                          <span className="text-[8px] font-bold opacity-80">Bisa di Puskesmas</span>
+                        </button>
+                      </div>
+                    </div>
                   </div>
                 )}
               </div>

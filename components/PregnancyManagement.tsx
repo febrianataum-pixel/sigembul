@@ -8,7 +8,6 @@ import {
   Info, 
   X, 
   Save, 
-  // Add User import to fix the "Cannot find name 'User'" error
   User,
   Users,
   FileText, 
@@ -20,11 +19,14 @@ import {
   ChevronRight,
   Filter,
   Baby,
-  Stethoscope
+  Stethoscope,
+  ShieldAlert,
+  ShieldCheck,
+  AlertCircle
 } from 'lucide-react';
 import { jsPDF } from 'jspdf';
 import autoTable from 'jspdf-autotable';
-import { Resident, ResidentStatus, AppConfig } from '../types';
+import { Resident, ResidentStatus, AppConfig, PregnancyRisk } from '../types';
 import { calculatePregnancyAge, formatDate, calculateAge } from '../utils/helpers';
 import EditResidentModal from './EditResidentModal';
 
@@ -58,7 +60,7 @@ const PregnancyManagement: React.FC<PregnancyManagementProps> = ({ residents, se
   const handleMarkNotPregnant = (resident: Resident) => {
     if (window.confirm(`Hapus status hamil untuk ${resident.fullName}?`)) {
       setResidents(prev => prev.map(r => 
-        r.id === resident.id ? { ...r, isPregnant: false, pregnancyStartDate: undefined } : r
+        r.id === resident.id ? { ...r, isPregnant: false, pregnancyStartDate: undefined, pregnancyRisk: undefined } : r
       ));
     }
   };
@@ -87,13 +89,14 @@ const PregnancyManagement: React.FC<PregnancyManagementProps> = ({ residents, se
         p.noKK,
         formatDate(p.pregnancyStartDate!),
         `${age.weeks} Minggu, ${age.days} Hari`,
+        p.pregnancyRisk?.toUpperCase() || '-',
         p.dusun.toUpperCase(),
         `RT ${p.rt}/RW ${p.rw}`
       ];
     });
 
     autoTable(doc, {
-      head: [['NO', 'NAMA IBU', 'NIK', 'NOMOR KK', 'TGL MULAI HAMIL', 'USIA KEHAMILAN', 'DUSUN', 'ALAMAT']],
+      head: [['NO', 'NAMA IBU', 'NIK', 'NOMOR KK', 'TGL MULAI HAMIL', 'USIA KEHAMILAN', 'RESIKO', 'DUSUN', 'ALAMAT']],
       body: tableData,
       startY: 40,
       styles: { fontSize: 8, cellPadding: 2 },
@@ -101,6 +104,15 @@ const PregnancyManagement: React.FC<PregnancyManagementProps> = ({ residents, se
     });
 
     doc.save(`Data_IbuHamil_Ngumbul_${new Date().toISOString().split('T')[0]}.pdf`);
+  };
+
+  const getRiskColor = (risk?: PregnancyRisk) => {
+    switch (risk) {
+      case 'Tinggi': return { bg: 'bg-rose-500', text: 'text-white', border: 'border-rose-600', icon: ShieldAlert, label: 'Resiko Tinggi (RS)' };
+      case 'Sedang': return { bg: 'bg-amber-400', text: 'text-slate-900', border: 'border-amber-500', icon: AlertCircle, label: 'Resiko Sedang (PKM)' };
+      case 'Rendah': return { bg: 'bg-emerald-500', text: 'text-white', border: 'border-emerald-600', icon: ShieldCheck, label: 'Tanpa Resiko (PKM)' };
+      default: return { bg: 'bg-slate-100', text: 'text-slate-400', border: 'border-slate-200', icon: Info, label: 'Belum Klasifikasi' };
+    }
   };
 
   return (
@@ -167,13 +179,14 @@ const PregnancyManagement: React.FC<PregnancyManagementProps> = ({ residents, se
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         {pregnantResidents.length > 0 ? pregnantResidents.map((p) => {
           const pregAge = calculatePregnancyAge(p.pregnancyStartDate!);
+          const risk = getRiskColor(p.pregnancyRisk);
           return (
-            <div key={p.id} className="bg-white rounded-[2rem] border border-slate-100 shadow-sm hover:border-pink-500 transition-all group p-6 overflow-hidden relative">
-               <div className="absolute top-0 right-0 w-32 h-32 bg-pink-50 rounded-full -mr-16 -mt-16 opacity-50 group-hover:scale-110 transition-transform"></div>
+            <div key={p.id} className={`bg-white rounded-[2rem] border-2 shadow-sm hover:shadow-xl transition-all group p-6 overflow-hidden relative ${risk.border}`}>
+               <div className={`absolute top-0 right-0 w-32 h-32 rounded-full -mr-16 -mt-16 opacity-10 group-hover:scale-110 transition-transform ${risk.bg}`}></div>
                
                <div className="flex items-start justify-between mb-4">
                   <div className="flex items-center space-x-3">
-                     <div className="w-12 h-12 bg-pink-100 text-pink-600 rounded-2xl flex items-center justify-center">
+                     <div className="w-12 h-12 bg-slate-100 text-slate-600 rounded-2xl flex items-center justify-center">
                         <User size={24} />
                      </div>
                      <div>
@@ -181,12 +194,19 @@ const PregnancyManagement: React.FC<PregnancyManagementProps> = ({ residents, se
                         <p className="text-[10px] text-slate-400 font-bold uppercase mt-1">NIK: {p.nik}</p>
                      </div>
                   </div>
-                  <div className="p-2 bg-slate-50 rounded-xl group-hover:bg-pink-600 group-hover:text-white transition-all cursor-pointer" onClick={() => setEditingResident(p)}>
+                  <div className="p-2 bg-slate-50 rounded-xl hover:bg-slate-900 hover:text-white transition-all cursor-pointer" onClick={() => setEditingResident(p)}>
                      <Eye size={16} />
                   </div>
                </div>
 
                <div className="space-y-4 relative z-10">
+                  <div className="flex items-center space-x-3">
+                    <div className={`${risk.bg} ${risk.text} px-3 py-1.5 rounded-xl flex items-center space-x-2 w-full shadow-sm`}>
+                       <risk.icon size={14} />
+                       <span className="text-[10px] font-black uppercase tracking-widest">{risk.label}</span>
+                    </div>
+                  </div>
+
                   <div className="bg-slate-50 p-4 rounded-2xl border border-slate-100">
                      <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1">Usia Kehamilan</p>
                      <p className="text-lg font-black text-pink-600 leading-none">
@@ -210,7 +230,7 @@ const PregnancyManagement: React.FC<PregnancyManagementProps> = ({ residents, se
                     className="w-full py-3 bg-white border border-slate-200 text-slate-400 hover:text-rose-600 hover:border-rose-200 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all flex items-center justify-center space-x-2"
                   >
                     <Stethoscope size={14} />
-                    <span>Sudah Melahirkan / Berakhir</span>
+                    <span>Sudah Melahirkan / Selesai</span>
                   </button>
                </div>
             </div>

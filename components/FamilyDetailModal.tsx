@@ -1,7 +1,7 @@
 
 import React, { useState } from 'react';
-import { X, User, Printer, UserPlus, Skull, Trash2, Calendar, Users, Save, PlaneLanding, HeartPulse } from 'lucide-react';
-import { Resident, ResidentStatus } from '../types';
+import { X, User, Printer, UserPlus, Skull, Trash2, Calendar, Users, Save, PlaneLanding, HeartPulse, ShieldAlert, ShieldCheck, Stethoscope } from 'lucide-react';
+import { Resident, ResidentStatus, PregnancyRisk } from '../types';
 import { calculateAge } from '../utils/helpers';
 import EditResidentModal from './EditResidentModal';
 
@@ -52,15 +52,15 @@ const FamilyDetailModal: React.FC<FamilyDetailModalProps> = ({ noKK, residents, 
   const archiveDeath = (date: string) => {
     if (!deathConfirm) return;
     setResidents(prev => prev.map(r => 
-      r.id === deathConfirm.id ? { ...r, status: 'Meninggal' as ResidentStatus, deathDate: date, isPregnant: false } : r
+      r.id === deathConfirm.id ? { ...r, status: 'Meninggal' as ResidentStatus, deathDate: date, isPregnant: false, pregnancyRisk: undefined } : r
     ));
     setDeathConfirm(null);
   };
 
-  const handleArchivePregnancy = (date: string) => {
+  const handleArchivePregnancy = (date: string, risk: PregnancyRisk) => {
     if (!pregnancyConfirm) return;
     setResidents(prev => prev.map(r => 
-      r.id === pregnancyConfirm.id ? { ...r, isPregnant: true, pregnancyStartDate: date } : r
+      r.id === pregnancyConfirm.id ? { ...r, isPregnant: true, pregnancyStartDate: date, pregnancyRisk: risk } : r
     ));
     setPregnancyConfirm(null);
   };
@@ -124,8 +124,12 @@ const FamilyDetailModal: React.FC<FamilyDetailModalProps> = ({ noKK, residents, 
                       <button onClick={() => currentViewStatus === 'Aktif' && setEditingMember(m)} className={`text-xs font-black font-mono ${currentViewStatus === 'Aktif' ? 'text-blue-600 hover:underline' : 'text-slate-400'}`}>{m.nik}</button>
                       <h5 className="text-sm font-black text-slate-900 uppercase truncate mt-0.5">{m.fullName}</h5>
                       {m.isPregnant && (
-                        <span className="inline-flex items-center px-2 py-0.5 rounded text-[8px] font-black bg-pink-100 text-pink-700 uppercase mt-1 animate-pulse">
-                          <HeartPulse size={8} className="mr-1" /> Sedang Hamil
+                        <span className={`inline-flex items-center px-2 py-0.5 rounded text-[8px] font-black uppercase mt-1 animate-pulse ${
+                          m.pregnancyRisk === 'Tinggi' ? 'bg-rose-100 text-rose-700' :
+                          m.pregnancyRisk === 'Sedang' ? 'bg-amber-100 text-amber-700' :
+                          'bg-emerald-100 text-emerald-700'
+                        }`}>
+                          <HeartPulse size={8} className="mr-1" /> Hamil ({m.pregnancyRisk || 'Resiko ?'})
                         </span>
                       )}
                     </div>
@@ -177,8 +181,10 @@ const FamilyDetailModal: React.FC<FamilyDetailModalProps> = ({ noKK, residents, 
   );
 };
 
-const PregnancyModal: React.FC<{ member: Resident, onClose: () => void, onConfirm: (date: string) => void }> = ({ member, onClose, onConfirm }) => {
+const PregnancyModal: React.FC<{ member: Resident, onClose: () => void, onConfirm: (date: string, risk: PregnancyRisk) => void }> = ({ member, onClose, onConfirm }) => {
   const [date, setDate] = useState(new Date().toISOString().split('T')[0]);
+  const [risk, setRisk] = useState<PregnancyRisk>('Rendah');
+
   return (
     <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-slate-900/70 backdrop-blur-md animate-in zoom-in-95">
       <div className="bg-white rounded-[2.5rem] shadow-2xl w-full max-w-sm overflow-hidden border border-slate-200">
@@ -191,12 +197,28 @@ const PregnancyModal: React.FC<{ member: Resident, onClose: () => void, onConfir
               <p className="text-[10px] text-pink-600 font-black uppercase mb-1 tracking-widest">Monitoring Ibu Hamil Baru</p>
               <p className="text-md font-black uppercase text-slate-900 leading-tight">{member.fullName}</p>
            </div>
-           <div className="text-left">
-              <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest block mb-2">Tanggal Mulai Hamil / HPHT</label>
-              <input type="date" value={date} onChange={e => setDate(e.target.value)} className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 font-bold focus:bg-white transition-all outline-none" required />
+
+           <div className="space-y-4">
+              <div>
+                <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest block mb-2">Tanggal Mulai (HPHT)</label>
+                <input type="date" value={date} onChange={e => setDate(e.target.value)} className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 font-bold focus:bg-white transition-all outline-none" required />
+              </div>
+
+              <div>
+                <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest block mb-2">Klasifikasi Resiko</label>
+                <div className="grid grid-cols-3 gap-2">
+                   <button onClick={() => setRisk('Tinggi')} className={`py-2 rounded-xl text-[9px] font-black uppercase border-2 transition-all ${risk === 'Tinggi' ? 'bg-rose-500 border-rose-600 text-white shadow-md' : 'bg-white border-slate-100 text-slate-400'}`}>Merah</button>
+                   <button onClick={() => setRisk('Sedang')} className={`py-2 rounded-xl text-[9px] font-black uppercase border-2 transition-all ${risk === 'Sedang' ? 'bg-amber-400 border-amber-500 text-slate-900 shadow-md' : 'bg-white border-slate-100 text-slate-400'}`}>Kuning</button>
+                   <button onClick={() => setRisk('Rendah')} className={`py-2 rounded-xl text-[9px] font-black uppercase border-2 transition-all ${risk === 'Rendah' ? 'bg-emerald-500 border-emerald-600 text-white shadow-md' : 'bg-white border-slate-100 text-slate-400'}`}>Hijau</button>
+                </div>
+                <p className="text-[8px] text-slate-400 mt-2 font-bold uppercase italic text-center">
+                  {risk === 'Tinggi' ? '* Rujukan Rumah Sakit' : risk === 'Sedang' ? '* Rujukan Puskesmas' : '* Bisa di Puskesmas'}
+                </p>
+              </div>
            </div>
-           <div className="space-y-3">
-              <button onClick={() => onConfirm(date)} className="w-full py-4 bg-pink-600 text-white rounded-2xl font-black text-sm uppercase shadow-xl hover:bg-pink-700 transition-all">Simpan Status Hamil</button>
+
+           <div className="space-y-3 pt-2">
+              <button onClick={() => onConfirm(date, risk)} className="w-full py-4 bg-pink-600 text-white rounded-2xl font-black text-sm uppercase shadow-xl hover:bg-pink-700 transition-all">Simpan Status Hamil</button>
               <button onClick={onClose} className="w-full py-3 text-center text-xs font-black text-slate-400 uppercase tracking-widest hover:text-slate-900 transition-all">Batal</button>
            </div>
         </div>
