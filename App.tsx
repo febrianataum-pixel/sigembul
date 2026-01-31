@@ -12,7 +12,7 @@ import AdvancedSearch from './components/AdvancedSearch';
 import Login from './components/Login';
 import { Resident, AppConfig } from './types';
 import { initializeApp, getApp, getApps } from 'firebase/app';
-import { getFirestore, collection, doc, writeBatch, getDocs, onSnapshot, query, limit } from 'firebase/firestore';
+import { getFirestore, collection, doc, writeBatch, getDocs, onSnapshot, setDoc } from 'firebase/firestore';
 import { getAuth, onAuthStateChanged, User, signOut } from 'firebase/auth';
 
 const App: React.FC = () => {
@@ -41,7 +41,7 @@ const App: React.FC = () => {
   
   const isHydrated = useRef(false); 
   const isInternalUpdate = useRef(false);
-  const syncTimeoutRef = useRef<any>(null);
+  const prevResidentsRef = useRef<Resident[]>(residents);
 
   // 0. Simpan Config ke LocalStorage
   useEffect(() => {
@@ -72,7 +72,7 @@ const App: React.FC = () => {
     }
   }, [config.firebaseConfig?.enabled, config.firebaseConfig?.projectId]);
 
-  // 2. Firebase Realtime Listener (COLLECTION MODE)
+  // 2. Firebase Realtime Listener (MERGE MODE)
   useEffect(() => {
     if (!config.firebaseConfig?.enabled || !config.firebaseConfig.projectId || !user) {
       isHydrated.current = true;
@@ -82,26 +82,46 @@ const App: React.FC = () => {
     let unsubRes = () => {};
     try {
       const db = getFirestore(getApp());
-      // Kita mendengarkan perubahan pada seluruh koleksi "residents_db"
       unsubRes = onSnapshot(collection(db, "residents_db"), (snap) => {
-        // Jangan update jika perubahan berasal dari diri sendiri (pending writes)
+        // Abaikan jika perubahan berasal dari aplikasi ini sendiri (local optimism)
         if (snap.metadata.hasPendingWrites) return;
 
-        // Jika ada perubahan di Cloud, ambil semua data terbaru
-        const cloudList: Resident[] = [];
-        snap.forEach((doc) => {
-          cloudList.push(doc.data() as Resident);
-        });
+        setResidents(prev => {
+          let next = [...prev];
+          let hasChanged = false;
 
-        // Pengamanan: Hanya timpa jika cloud tidak kosong atau ini sinkronisasi pertama
-        if (cloudList.length > 0 || residents.length === 0) {
-          isInternalUpdate.current = true;
-          setResidents(cloudList);
-          localStorage.setItem('siga_residents', JSON.stringify(cloudList));
-        }
-        isHydrated.current = true;
-      }, (err) => {
-        console.error("Firebase Sync Error:", err);
+          snap.docChanges().forEach(change => {
+            const cloudData = change.doc.data() as Resident;
+            const idx = next.findIndex(r => r.id === cloudData.id);
+
+            if (change.type === 'added' || change.type === 'modified') {
+              if (idx > -1) {
+                // Bandingkan untuk menghindari re-render yang tidak perlu
+                if (JSON.stringify(next[idx]) !== JSON.stringify(cloudData)) {
+                  next[idx] = cloudData;
+                  hasChanged = true;
+                }
+              } else {
+                next.push(cloudData);
+                hasChanged = true;
+              }
+            } else if (change.type === 'removed') {
+              if (idx > -1) {
+                next.splice(idx, 1);
+                hasChanged = true;
+              }
+            }
+          });
+
+          if (hasChanged) {
+            isInternalUpdate.current = true;
+            // Update ref agar tidak memicu auto-sync balik ke cloud
+            prevResidentsRef.current = next;
+            localStorage.setItem('siga_residents', JSON.stringify(next));
+            return next;
+          }
+          return prev;
+        });
         isHydrated.current = true;
       });
     } catch (e) {
@@ -110,18 +130,46 @@ const App: React.FC = () => {
     return () => unsubRes();
   }, [user, config.firebaseConfig?.enabled]);
 
-  // 3. Auto-Save to LocalStorage
+  // 3. AUTO-SYNC: Kirim perubahan individu ke Cloud secara otomatis
   useEffect(() => {
+    // Selalu simpan ke LocalStorage agar aman jika tab tertutup
     localStorage.setItem('siga_residents', JSON.stringify(residents));
-  }, [residents]);
+
+    // Jika perubahan datang dari Cloud (onSnapshot), jangan kirim balik
+    if (isInternalUpdate.current) {
+      isInternalUpdate.current = false;
+      return;
+    }
+
+    // Hanya jalan jika Firebase aktif dan User sudah Login
+    if (config.firebaseConfig?.enabled && user) {
+      // Cari data mana yang berubah dibandingkan data sebelumnya
+      const changedResidents = residents.filter(curr => {
+        const prev = prevResidentsRef.current.find(p => p.id === curr.id);
+        return !prev || JSON.stringify(prev) !== JSON.stringify(curr);
+      });
+
+      if (changedResidents.length > 0 && changedResidents.length < 50) { // Limit 50 agar tidak membebani saat import besar
+        const db = getFirestore(getApp());
+        changedResidents.forEach(async (res) => {
+          try {
+            await setDoc(doc(db, "residents_db", res.id), res);
+          } catch (e) {
+            console.error("Auto-sync error for", res.fullName, e);
+          }
+        });
+      }
+    }
+    
+    // Perbarui ref untuk perbandingan selanjutnya
+    prevResidentsRef.current = residents;
+  }, [residents, user, config.firebaseConfig?.enabled]);
 
   const forcePush = async () => {
     if (!config.firebaseConfig?.enabled || !user) return alert("Firebase belum aktif atau belum login.");
     setIsSyncing(true);
     try {
       const db = getFirestore(getApp());
-      
-      // Menggunakan BATCH (Maksimal 500 per kiriman)
       let batch = writeBatch(db);
       let count = 0;
       
@@ -129,19 +177,12 @@ const App: React.FC = () => {
         const docRef = doc(db, "residents_db", res.id);
         batch.set(docRef, res);
         count++;
-        
-        // Jika sudah 500, kirim dulu lalu buat batch baru
         if (count % 500 === 0) {
           await batch.commit();
           batch = writeBatch(db);
         }
       }
-      
-      // Kirim sisanya
-      if (count % 500 !== 0) {
-        await batch.commit();
-      }
-
+      if (count % 500 !== 0) await batch.commit();
       alert(`Berhasil mengunggah ${count} data penduduk ke Cloud.`);
     } catch (e: any) { 
       alert("Gagal unggah: " + e.message); 
@@ -162,6 +203,7 @@ const App: React.FC = () => {
       });
 
       if (cloudList.length > 0) {
+        isInternalUpdate.current = true;
         setResidents(cloudList);
         localStorage.setItem('siga_residents', JSON.stringify(cloudList));
         alert(`Berhasil mengambil ${cloudList.length} data dari Cloud.`);
