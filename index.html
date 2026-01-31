@@ -8,6 +8,18 @@
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <title>SIGA Ngumbul - Sistem Informasi & Data</title>
   <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['Inter', 'sans-serif'],
+          },
+        },
+      },
+    }
+  </script>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
   <style>
     body {
@@ -17,6 +29,11 @@
       overscroll-behavior-y: contain;
     }
     
+    /* Dark mode body override */
+    .dark body {
+      background-color: #020617; /* slate-950 */
+    }
+
     .transition-all {
       transition-property: all;
       transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
@@ -52,14 +69,6 @@
       .print-only { display: block !important; }
       table { width: 100% !important; border-collapse: collapse !important; }
       th, td { border: 0.5pt solid black !important; padding: 4pt 3pt !important; font-size: 8pt !important; color: black !important; }
-    }
-
-    .overflow-x-auto {
-      -webkit-overflow-scrolling: touch;
-      scrollbar-width: none;
-    }
-    .overflow-x-auto::-webkit-scrollbar {
-      display: none;
     }
 
     .scrollbar-hide {

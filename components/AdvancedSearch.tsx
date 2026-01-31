@@ -138,14 +138,14 @@ const AdvancedSearch: React.FC<AdvancedSearchProps> = ({ residents, setResidents
   return (
     <div className="space-y-6 animate-in fade-in duration-500">
       {/* Header Panel */}
-      <div className="bg-white p-6 md:p-8 rounded-[2.5rem] shadow-sm border border-slate-200">
+      <div className="bg-white dark:bg-slate-900 p-6 md:p-8 rounded-[2.5rem] shadow-sm border border-slate-200 dark:border-slate-800">
         <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6">
           <div className="flex items-center space-x-6">
             <div className="w-14 h-14 bg-blue-600 text-white rounded-2xl flex items-center justify-center shadow-lg shadow-blue-500/20">
               <Filter size={28} />
             </div>
             <div>
-              <h2 className="text-xl font-black text-slate-900 uppercase tracking-tighter leading-none">Pencarian Lanjut</h2>
+              <h2 className="text-xl font-black text-slate-900 dark:text-white uppercase tracking-tighter leading-none">Pencarian Lanjut</h2>
               <p className="text-slate-400 text-[10px] font-bold uppercase tracking-widest mt-2">Filter multi-indikator & export data spesifik</p>
             </div>
           </div>
@@ -160,7 +160,7 @@ const AdvancedSearch: React.FC<AdvancedSearchProps> = ({ residents, setResidents
             </button>
             <button 
               onClick={resetFilters}
-              className="p-4 bg-slate-100 text-slate-500 rounded-2xl hover:bg-slate-200 transition-all"
+              className="p-4 bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400 rounded-2xl hover:bg-slate-200 dark:hover:bg-slate-700 transition-all"
               title="Reset Filter"
             >
               <RefreshCcw size={20} />
@@ -170,15 +170,15 @@ const AdvancedSearch: React.FC<AdvancedSearchProps> = ({ residents, setResidents
       </div>
 
       {/* Filter Section */}
-      <div className="bg-white p-6 md:p-8 rounded-[2.5rem] border border-slate-200 shadow-sm">
+      <div className="bg-white dark:bg-slate-900 p-6 md:p-8 rounded-[2.5rem] border border-slate-200 dark:border-slate-800 shadow-sm">
         <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-4 md:gap-6">
           <div className="md:col-span-2 lg:col-span-2">
-            <label className="text-[9px] font-black text-slate-400 uppercase tracking-widest block mb-2">Nama / NIK / No. KK</label>
+            <label className="text-[9px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest block mb-2">Nama / NIK / No. KK</label>
             <div className="relative">
               <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
               <input 
                 type="text" 
-                className="w-full bg-slate-50 border border-slate-200 rounded-2xl pl-12 pr-4 py-3.5 text-sm font-bold outline-none focus:bg-white focus:ring-4 focus:ring-blue-500/10 transition-all"
+                className="w-full bg-slate-50 dark:bg-slate-800 dark:text-white border border-slate-200 dark:border-slate-700 rounded-2xl pl-12 pr-4 py-3.5 text-sm font-bold outline-none focus:bg-white dark:focus:bg-slate-800 focus:ring-4 focus:ring-blue-500/10 transition-all"
                 placeholder="Cari..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
@@ -187,29 +187,29 @@ const AdvancedSearch: React.FC<AdvancedSearchProps> = ({ residents, setResidents
           </div>
 
           <div>
-            <label className="text-[9px] font-black text-slate-400 uppercase tracking-widest block mb-2">Pilih Dusun</label>
+            <label className="text-[9px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest block mb-2">Pilih Dusun</label>
             <div className="relative">
               <MapPin className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={16} />
               <select 
-                className="w-full bg-slate-50 border border-slate-200 rounded-2xl pl-12 pr-4 py-3.5 text-sm font-bold outline-none focus:bg-white transition-all appearance-none"
+                className="w-full bg-slate-50 dark:bg-slate-800 dark:text-white border border-slate-200 dark:border-slate-700 rounded-2xl pl-12 pr-4 py-3.5 text-sm font-bold outline-none focus:bg-white dark:focus:bg-slate-800 transition-all appearance-none"
                 value={selectedDusun}
                 onChange={(e) => setSelectedDusun(e.target.value)}
               >
-                <option value="">Semua Wilayah</option>
-                {dusunList.map(d => <option key={d} value={d}>{d}</option>)}
+                <option value="" className="dark:bg-slate-900">Semua Wilayah</option>
+                {dusunList.map(d => <option key={d} value={d} className="dark:bg-slate-900">{d}</option>)}
               </select>
             </div>
           </div>
 
           <div>
-            <label className="text-[9px] font-black text-slate-400 uppercase tracking-widest block mb-2">Usia (Tahun)</label>
+            <label className="text-[9px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest block mb-2">Usia (Tahun)</label>
             <div className="relative">
               <Calendar className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={16} />
               <input 
                 type="number" 
                 min="0"
                 max="150"
-                className="w-full bg-slate-50 border border-slate-200 rounded-2xl pl-12 pr-4 py-3.5 text-sm font-bold outline-none focus:bg-white transition-all"
+                className="w-full bg-slate-50 dark:bg-slate-800 dark:text-white border border-slate-200 dark:border-slate-700 rounded-2xl pl-12 pr-4 py-3.5 text-sm font-bold outline-none focus:bg-white dark:focus:bg-slate-800 transition-all"
                 placeholder="Contoh: 1"
                 value={selectedAge}
                 onChange={(e) => setSelectedAge(e.target.value)}
@@ -218,47 +218,47 @@ const AdvancedSearch: React.FC<AdvancedSearchProps> = ({ residents, setResidents
           </div>
 
           <div>
-            <label className="text-[9px] font-black text-slate-400 uppercase tracking-widest block mb-2">Jenis Kelamin</label>
+            <label className="text-[9px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest block mb-2">Jenis Kelamin</label>
             <div className="relative">
               <User className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={16} />
               <select 
-                className="w-full bg-slate-50 border border-slate-200 rounded-2xl pl-12 pr-4 py-3.5 text-sm font-bold outline-none focus:bg-white transition-all appearance-none"
+                className="w-full bg-slate-50 dark:bg-slate-800 dark:text-white border border-slate-200 dark:border-slate-700 rounded-2xl pl-12 pr-4 py-3.5 text-sm font-bold outline-none focus:bg-white dark:focus:bg-slate-800 transition-all appearance-none"
                 value={selectedGender}
                 onChange={(e) => setSelectedGender(e.target.value)}
               >
-                <option value="">Semua Gender</option>
-                <option value="Laki">Laki-laki</option>
-                <option value="Perempuan">Perempuan</option>
+                <option value="" className="dark:bg-slate-900">Semua Gender</option>
+                <option value="Laki" className="dark:bg-slate-900">Laki-laki</option>
+                <option value="Perempuan" className="dark:bg-slate-900">Perempuan</option>
               </select>
             </div>
           </div>
 
           <div>
-            <label className="text-[9px] font-black text-slate-400 uppercase tracking-widest block mb-2">Status Kawin</label>
+            <label className="text-[9px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest block mb-2">Status Kawin</label>
             <div className="relative">
               <Heart className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={16} />
               <select 
-                className="w-full bg-slate-50 border border-slate-200 rounded-2xl pl-12 pr-4 py-3.5 text-sm font-bold outline-none focus:bg-white transition-all appearance-none"
+                className="w-full bg-slate-50 dark:bg-slate-800 dark:text-white border border-slate-200 dark:border-slate-700 rounded-2xl pl-12 pr-4 py-3.5 text-sm font-bold outline-none focus:bg-white dark:focus:bg-slate-800 transition-all appearance-none"
                 value={selectedMarital}
                 onChange={(e) => setSelectedMarital(e.target.value)}
               >
-                <option value="">Semua Status</option>
-                {maritalList.map(m => <option key={m} value={m}>{m}</option>)}
+                <option value="" className="dark:bg-slate-900">Semua Status</option>
+                {maritalList.map(m => <option key={m} value={m} className="dark:bg-slate-900">{m}</option>)}
               </select>
             </div>
           </div>
 
           <div className="md:col-span-2">
-            <label className="text-[9px] font-black text-slate-400 uppercase tracking-widest block mb-2">Pendidikan</label>
+            <label className="text-[9px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest block mb-2">Pendidikan</label>
             <div className="relative">
               <Layers className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={16} />
               <select 
-                className="w-full bg-slate-50 border border-slate-200 rounded-2xl pl-12 pr-4 py-3.5 text-sm font-bold outline-none focus:bg-white transition-all appearance-none"
+                className="w-full bg-slate-50 dark:bg-slate-800 dark:text-white border border-slate-200 dark:border-slate-700 rounded-2xl pl-12 pr-4 py-3.5 text-sm font-bold outline-none focus:bg-white dark:focus:bg-slate-800 transition-all appearance-none"
                 value={selectedEducation}
                 onChange={(e) => setSelectedEducation(e.target.value)}
               >
-                <option value="">Semua Tingkat</option>
-                {educationList.map(edu => <option key={edu} value={edu}>{edu}</option>)}
+                <option value="" className="dark:bg-slate-900">Semua Tingkat</option>
+                {educationList.map(edu => <option key={edu} value={edu} className="dark:bg-slate-900">{edu}</option>)}
               </select>
             </div>
           </div>
@@ -266,14 +266,14 @@ const AdvancedSearch: React.FC<AdvancedSearchProps> = ({ residents, setResidents
       </div>
 
       {/* Results Section */}
-      <div className="bg-white rounded-[2.5rem] shadow-sm border border-slate-200 overflow-hidden">
-        <div className="p-8 border-b border-slate-100 flex items-center justify-between bg-slate-50/50">
+      <div className="bg-white dark:bg-slate-900 rounded-[2.5rem] shadow-sm border border-slate-200 dark:border-slate-800 overflow-hidden">
+        <div className="p-8 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between bg-slate-50/50 dark:bg-slate-800/50">
           <div className="flex items-center space-x-4">
-            <div className="w-10 h-10 bg-blue-50 text-blue-600 rounded-xl flex items-center justify-center">
+            <div className="w-10 h-10 bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 rounded-xl flex items-center justify-center">
               <User size={20} />
             </div>
             <div>
-              <h3 className="text-sm font-black text-slate-800 uppercase tracking-widest">Daftar Hasil Pencarian</h3>
+              <h3 className="text-sm font-black text-slate-800 dark:text-white uppercase tracking-widest">Daftar Hasil Pencarian</h3>
               <p className="text-[9px] text-slate-400 font-bold uppercase tracking-widest mt-1">Ditemukan {filteredData.length} jiwa sesuai filter</p>
             </div>
           </div>
@@ -281,48 +281,48 @@ const AdvancedSearch: React.FC<AdvancedSearchProps> = ({ residents, setResidents
 
         <div className="overflow-x-auto">
           <table className="w-full text-left border-collapse min-w-[1000px]">
-            <thead className="bg-slate-50 border-b border-slate-200">
+            <thead className="bg-slate-50 dark:bg-slate-800 border-b border-slate-200 dark:border-slate-700">
               <tr>
-                <th className="px-8 py-5 text-[10px] font-black text-slate-400 uppercase tracking-widest w-16 text-center">No</th>
-                <th className="px-6 py-5 text-[10px] font-black text-slate-400 uppercase tracking-widest">Penduduk</th>
-                <th className="px-6 py-5 text-[10px] font-black text-slate-400 uppercase tracking-widest">Identitas Dokumen</th>
-                <th className="px-6 py-5 text-[10px] font-black text-slate-400 uppercase tracking-widest text-center">JK / Usia</th>
-                <th className="px-6 py-5 text-[10px] font-black text-slate-400 uppercase tracking-widest">Hubungan</th>
-                <th className="px-6 py-5 text-[10px] font-black text-slate-400 uppercase tracking-widest">Alamat</th>
-                <th className="px-6 py-5 text-[10px] font-black text-slate-400 uppercase tracking-widest text-center">Aksi</th>
+                <th className="px-8 py-5 text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest w-16 text-center">No</th>
+                <th className="px-6 py-5 text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest">Penduduk</th>
+                <th className="px-6 py-5 text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest">Identitas Dokumen</th>
+                <th className="px-6 py-5 text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest text-center">JK / Usia</th>
+                <th className="px-6 py-5 text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest">Hubungan</th>
+                <th className="px-6 py-5 text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest">Alamat</th>
+                <th className="px-6 py-5 text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest text-center">Aksi</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-slate-100">
+            <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
               {filteredData.length > 0 ? filteredData.map((resident, idx) => (
-                <tr key={resident.id} className="hover:bg-blue-50/20 transition-all group">
-                  <td className="px-8 py-6 text-center text-xs font-black text-slate-300">{idx + 1}</td>
+                <tr key={resident.id} className="hover:bg-blue-50/20 dark:hover:bg-blue-900/10 transition-all group">
+                  <td className="px-8 py-6 text-center text-xs font-black text-slate-300 dark:text-slate-600">{idx + 1}</td>
                   <td className="px-6 py-6">
                     <div>
-                      <div className="text-sm font-black text-slate-900 uppercase tracking-tighter leading-none">{resident.fullName}</div>
-                      <div className="text-[10px] text-slate-400 font-bold uppercase mt-1">{resident.birthPlace}, {formatDate(resident.birthDate)}</div>
+                      <div className="text-sm font-black text-slate-900 dark:text-white uppercase tracking-tighter leading-none">{resident.fullName}</div>
+                      <div className="text-[10px] text-slate-400 dark:text-slate-500 font-bold uppercase mt-1">{resident.birthPlace}, {formatDate(resident.birthDate)}</div>
                     </div>
                   </td>
                   <td className="px-6 py-6">
-                    <div className="text-[10px] font-bold text-blue-600 font-mono tracking-tighter">NIK: {resident.nik}</div>
+                    <div className="text-[10px] font-bold text-blue-600 dark:text-blue-400 font-mono tracking-tighter">NIK: {resident.nik}</div>
                     <div className="text-[9px] text-slate-400 font-mono tracking-tighter">KK: {resident.noKK}</div>
                   </td>
                   <td className="px-6 py-6 text-center">
-                    <span className={`px-2 py-0.5 rounded-full text-[8px] font-black uppercase mb-1 inline-block ${resident.gender.includes('Laki') ? 'bg-blue-100 text-blue-700' : 'bg-pink-100 text-pink-700'}`}>
+                    <span className={`px-2 py-0.5 rounded-full text-[8px] font-black uppercase mb-1 inline-block ${resident.gender.includes('Laki') ? 'bg-blue-100 dark:bg-blue-900/40 text-blue-700 dark:text-blue-300' : 'bg-pink-100 dark:bg-pink-900/40 text-pink-700 dark:text-pink-300'}`}>
                       {resident.gender.includes('Laki') ? 'L' : 'P'}
                     </span>
-                    <div className="text-[10px] font-black text-slate-900 uppercase">{calculateAge(resident.birthDate)} Thn</div>
+                    <div className="text-[10px] font-black text-slate-900 dark:text-white uppercase">{calculateAge(resident.birthDate)} Thn</div>
                   </td>
                   <td className="px-6 py-6">
-                    <div className="text-[10px] text-slate-700 font-black uppercase">{resident.relationship.split('. ').pop()}</div>
+                    <div className="text-[10px] text-slate-700 dark:text-slate-300 font-black uppercase">{resident.relationship.split('. ').pop()}</div>
                   </td>
                   <td className="px-6 py-6">
-                    <div className="text-[10px] font-black text-slate-700 uppercase">{resident.dusun}</div>
+                    <div className="text-[10px] font-black text-slate-700 dark:text-slate-300 uppercase">{resident.dusun}</div>
                     <div className="text-[9px] text-slate-400 font-black uppercase">RT {resident.rt} / RW {resident.rw}</div>
                   </td>
                   <td className="px-6 py-6 text-center">
                     <button 
                       onClick={() => setViewingFamilyKK(resident.noKK)}
-                      className="p-2.5 bg-slate-100 text-slate-500 rounded-xl hover:bg-blue-600 hover:text-white transition-all shadow-sm" 
+                      className="p-2.5 bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400 rounded-xl hover:bg-blue-600 hover:text-white transition-all shadow-sm" 
                       title="Lihat Keluarga"
                     >
                       <Eye size={16} />
@@ -333,8 +333,8 @@ const AdvancedSearch: React.FC<AdvancedSearchProps> = ({ residents, setResidents
                 <tr>
                   <td colSpan={7} className="py-24 text-center">
                     <div className="max-w-xs mx-auto">
-                      <Search size={48} className="mx-auto text-slate-200 mb-4" />
-                      <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Tidak ada data ditemukan</p>
+                      <Search size={48} className="mx-auto text-slate-200 dark:text-slate-700 mb-4" />
+                      <p className="text-[10px] font-black text-slate-400 dark:text-slate-600 uppercase tracking-widest">Tidak ada data ditemukan</p>
                     </div>
                   </td>
                 </tr>

@@ -43,6 +43,16 @@ const App: React.FC = () => {
   const lastCloudResidentUpdate = useRef<string | null>(null);
   const lastCloudConfigUpdate = useRef<string | null>(null);
 
+  // Sync Theme with Document Root (Penting untuk Dark Mode Tailwind)
+  useEffect(() => {
+    const root = window.document.documentElement;
+    if (config.theme === 'dark') {
+      root.classList.add('dark');
+    } else {
+      root.classList.remove('dark');
+    }
+  }, [config.theme]);
+
   // 1. Setup Firebase & Listeners
   useEffect(() => {
     if (!config.firebaseConfig?.enabled || !config.firebaseConfig.projectId) return;
@@ -56,14 +66,11 @@ const App: React.FC = () => {
         : getApp();
       const db = getFirestore(firebaseApp);
       
-      console.log("📡 Mencoba sinkronisasi cloud...");
-
       // Listener Data Penduduk
       unsubRes = onSnapshot(doc(db, "ngumbul_data", "residents_master"), (snap) => {
         if (snap.exists()) {
           const data = snap.data();
           if (data.lastUpdated !== lastCloudResidentUpdate.current) {
-            console.log("☁️ Update Penduduk diterima dari Cloud");
             lastCloudResidentUpdate.current = data.lastUpdated;
             skipNextResidentSync.current = true;
             setResidents(data.list || []);
@@ -77,16 +84,14 @@ const App: React.FC = () => {
         if (snap.exists()) {
           const data = snap.data();
           if (data.lastUpdated !== lastCloudConfigUpdate.current) {
-            console.log("☁️ Update Profil/Tema diterima dari Cloud");
             lastCloudConfigUpdate.current = data.lastUpdated;
             skipNextConfigSync.current = true;
             
-            // CRITICAL: Gunakan functional update untuk menjaga kredensial firebase lokal
             setConfig(prev => {
               const newConf = { 
                 ...prev, 
                 ...data, 
-                firebaseConfig: prev.firebaseConfig // Tetap pakai key lokal
+                firebaseConfig: prev.firebaseConfig 
               };
               localStorage.setItem('siga_config', JSON.stringify(newConf));
               return newConf;

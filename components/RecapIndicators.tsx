@@ -183,18 +183,18 @@ const RecapIndicators: React.FC<RecapIndicatorsProps> = ({ residents = [], confi
   if (!selectedIndicator) {
     return (
       <div className="space-y-8 animate-in fade-in duration-500">
-        <div className="bg-white p-8 rounded-[3rem] border border-slate-200 shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-6">
+        <div className="bg-white dark:bg-slate-900 p-8 rounded-[3rem] border border-slate-200 dark:border-slate-800 shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-6">
            <div className="flex items-center space-x-6">
-              <div className="w-16 h-16 bg-pink-100 text-pink-600 rounded-3xl flex items-center justify-center shadow-inner">
+              <div className="w-16 h-16 bg-pink-100 dark:bg-pink-900/30 text-pink-600 dark:text-pink-400 rounded-3xl flex items-center justify-center shadow-inner">
                  <HeartPulse size={32} />
               </div>
               <div>
-                 <h2 className="text-xl font-black text-slate-900 uppercase tracking-tighter leading-none">Indikator Ibu Hamil</h2>
+                 <h2 className="text-xl font-black text-slate-900 dark:text-white uppercase tracking-tighter leading-none">Indikator Ibu Hamil</h2>
                  <p className="text-slate-400 text-[10px] font-bold uppercase tracking-widest mt-2">Data KIA (Kesehatan Ibu dan Anak)</p>
               </div>
            </div>
-           <div className="bg-pink-50 border border-pink-100 px-10 py-4 rounded-3xl text-center">
-              <span className="text-3xl font-black text-pink-600 block leading-none">{totalPregnant}</span>
+           <div className="bg-pink-50 dark:bg-pink-950/20 border border-pink-100 dark:border-pink-900/30 px-10 py-4 rounded-3xl text-center">
+              <span className="text-3xl font-black text-pink-600 dark:text-pink-400 block leading-none">{totalPregnant}</span>
               <span className="text-[9px] font-black text-pink-400 uppercase tracking-[0.2em] mt-1 block">Total Ibu Hamil Aktif</span>
            </div>
         </div>
@@ -204,12 +204,12 @@ const RecapIndicators: React.FC<RecapIndicatorsProps> = ({ residents = [], confi
             <button
               key={item.id}
               onClick={() => setSelectedIndicator(item.id)}
-              className="bg-white p-5 md:p-10 rounded-2xl md:rounded-[3rem] border border-slate-200 shadow-sm flex flex-col items-center text-center space-y-4 transition-all hover:shadow-xl hover:scale-[1.03] group"
+              className="bg-white dark:bg-slate-900 p-5 md:p-10 rounded-2xl md:rounded-[3rem] border border-slate-200 dark:border-slate-800 shadow-sm flex flex-col items-center text-center space-y-4 transition-all hover:shadow-xl hover:scale-[1.03] group"
             >
               <div className={`${item.color} text-white p-4 md:p-8 rounded-2xl md:rounded-[2rem] shrink-0 shadow-lg shadow-current/10 group-hover:scale-110 transition-transform`}>
                 <item.icon size={24} className="md:w-10 md:h-10" />
               </div>
-              <h3 className="text-[10px] md:text-base font-black text-slate-800 uppercase tracking-widest">{item.label}</h3>
+              <h3 className="text-[10px] md:text-base font-black text-slate-800 dark:text-white uppercase tracking-widest">{item.label}</h3>
             </button>
           ))}
         </div>
@@ -219,43 +219,43 @@ const RecapIndicators: React.FC<RecapIndicatorsProps> = ({ residents = [], confi
 
   return (
     <div className="space-y-4 md:space-y-6 animate-in slide-in-from-right-4 duration-500">
-      <div className="bg-white p-4 md:p-6 rounded-[2rem] border border-slate-200 shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-4">
+      <div className="bg-white dark:bg-slate-900 p-4 md:p-6 rounded-[2rem] border border-slate-200 dark:border-slate-800 shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div className="flex items-center space-x-3">
-          <button onClick={() => { setSelectedIndicator(null); setDusunFilter(''); }} className="p-2.5 bg-slate-100 hover:bg-slate-200 text-slate-600 rounded-xl transition-all">
+          <button onClick={() => { setSelectedIndicator(null); setDusunFilter(''); }} className="p-2.5 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-400 rounded-xl transition-all">
             <ArrowLeft size={18} />
           </button>
-          <h2 className="text-[11px] md:text-xl font-black uppercase tracking-widest text-slate-900">{INDICATORS_CONFIG.find(i => i.id === selectedIndicator)?.label}</h2>
+          <h2 className="text-[11px] md:text-xl font-black uppercase tracking-widest text-slate-900 dark:text-white">{INDICATORS_CONFIG.find(i => i.id === selectedIndicator)?.label}</h2>
         </div>
         
-        <div className="flex items-center space-x-2 bg-slate-100 p-1.5 rounded-2xl border border-slate-200">
+        <div className="flex items-center space-x-2 bg-slate-100 dark:bg-slate-800 p-1.5 rounded-2xl border border-slate-200 dark:border-slate-700">
            <div className="pl-3 pr-1 text-slate-400"><Filter size={14} /></div>
            <select 
-             className="bg-transparent text-[10px] md:text-xs font-black uppercase outline-none px-2 py-1 cursor-pointer"
+             className="bg-transparent text-[10px] md:text-xs font-black uppercase outline-none px-2 py-1 cursor-pointer dark:text-white"
              value={dusunFilter}
              onChange={(e) => setDusunFilter(e.target.value)}
            >
-             <option value="">Seluruh Desa</option>
-             {dusunList.map(d => <option key={d} value={d}>{d}</option>)}
+             <option value="" className="dark:bg-slate-800">Seluruh Desa</option>
+             {dusunList.map(d => <option key={d} value={d} className="dark:bg-slate-800">{d}</option>)}
            </select>
         </div>
       </div>
 
-      <div className="bg-white p-6 md:p-12 rounded-[2.5rem] md:rounded-[4rem] border border-slate-200 shadow-sm relative overflow-hidden">
+      <div className="bg-white dark:bg-slate-900 p-6 md:p-12 rounded-[2.5rem] md:rounded-[4rem] border border-slate-200 dark:border-slate-800 shadow-sm relative overflow-hidden">
          <div className="flex items-center justify-between mb-8 md:mb-12">
             <div>
               <h3 className="text-[9px] md:text-sm font-black text-slate-400 uppercase tracking-widest">Visualisasi Data</h3>
               <p className="text-[8px] md:text-[10px] font-bold text-slate-400 mt-1 uppercase tracking-tighter">Wilayah: {dusunFilter || 'Seluruh Desa'}</p>
             </div>
-            <span className="text-[8px] md:text-[10px] font-bold text-blue-600 uppercase bg-blue-50 px-3 py-1 rounded-full border border-blue-100">Klik bar untuk rincian BNBA</span>
+            <span className="text-[8px] md:text-[10px] font-bold text-blue-600 dark:text-blue-400 uppercase bg-blue-50 dark:bg-blue-900/30 px-3 py-1 rounded-full border border-blue-100 dark:border-blue-800">Klik bar untuk rincian BNBA</span>
          </div>
          <div className="h-[400px] md:h-[600px]">
             <ResponsiveContainer width="100%" height="100%">
                <BarChart data={currentIndicatorData} layout="vertical" margin={{ left: -10, right: 30 }}>
-                  <CartesianGrid strokeDasharray="3 3" horizontal={true} vertical={false} stroke="#f1f5f9" />
+                  <CartesianGrid strokeDasharray="3 3" horizontal={true} vertical={false} stroke="#334155" opacity={0.1} />
                   <XAxis type="number" hide />
                   <YAxis dataKey="name" type="category" width={100} tick={{ fontSize: 9, fontWeight: 900, fill: '#64748b' }} axisLine={false} tickLine={false} />
                   <Tooltip 
-                    cursor={{ fill: '#f8fafc' }} 
+                    cursor={{ fill: '#1e293b', opacity: 0.1 }} 
                     content={({ active, payload }) => {
                       if (active && payload?.length) {
                         return (
@@ -283,8 +283,8 @@ const RecapIndicators: React.FC<RecapIndicatorsProps> = ({ residents = [], confi
 
       {selectedBNBA && (
         <div className="fixed inset-0 z-[100] flex items-center justify-center p-3 md:p-6 bg-slate-900/60 backdrop-blur-md animate-in fade-in">
-           <div className="bg-white rounded-[2rem] md:rounded-[3rem] shadow-2xl w-full max-w-4xl h-[90vh] flex flex-col border border-slate-200 animate-in zoom-in-95">
-              <div className="p-6 md:p-8 bg-slate-900 text-white flex justify-between items-center shrink-0">
+           <div className="bg-white dark:bg-slate-900 rounded-[2rem] md:rounded-[3rem] shadow-2xl w-full max-w-4xl h-[90vh] flex flex-col border border-slate-200 dark:border-slate-800 animate-in zoom-in-95">
+              <div className="p-6 md:p-8 bg-slate-950 text-white flex justify-between items-center shrink-0">
                  <div className="flex items-center space-x-4">
                     <div className="w-12 h-12 bg-emerald-600 rounded-2xl flex items-center justify-center shadow-lg">
                        <Users size={24} />
@@ -309,14 +309,14 @@ const RecapIndicators: React.FC<RecapIndicatorsProps> = ({ residents = [], confi
                  </div>
               </div>
 
-              <div className="flex-1 overflow-hidden flex flex-col bg-slate-50/50">
-                 <div className="p-4 md:p-6 bg-white border-b border-slate-100 flex items-center">
-                    <div className="flex-1 flex items-center bg-slate-50 border border-slate-200 rounded-xl px-4 py-2.5">
+              <div className="flex-1 overflow-hidden flex flex-col bg-slate-50/50 dark:bg-slate-900/50">
+                 <div className="p-4 md:p-6 bg-white dark:bg-slate-900 border-b border-slate-100 dark:border-slate-800 flex items-center">
+                    <div className="flex-1 flex items-center bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-4 py-2.5">
                        <Search size={16} className="text-slate-400 mr-3" />
                        <input 
                          type="text" 
                          placeholder="Cari nama dalam daftar ini..." 
-                         className="bg-transparent text-xs font-bold outline-none w-full"
+                         className="bg-transparent text-xs font-bold outline-none w-full dark:text-white"
                          value={bnbaSearch}
                          onChange={(e) => setBnbaSearch(e.target.value)}
                        />
@@ -326,34 +326,34 @@ const RecapIndicators: React.FC<RecapIndicatorsProps> = ({ residents = [], confi
                  <div className="flex-1 overflow-auto p-4 md:p-8">
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                        {bnbaList.map((r, idx) => (
-                          <div key={idx} className="bg-white p-4 rounded-2xl border border-slate-100 shadow-sm flex items-center space-x-4 hover:border-blue-500 transition-all group">
-                             <div className="w-10 h-10 bg-slate-100 rounded-xl flex items-center justify-center text-[10px] font-black text-slate-400 group-hover:bg-blue-600 group-hover:text-white transition-all shrink-0">
+                          <div key={idx} className="bg-white dark:bg-slate-800 p-4 rounded-2xl border border-slate-100 dark:border-slate-700 shadow-sm flex items-center space-x-4 hover:border-blue-500 transition-all group">
+                             <div className="w-10 h-10 bg-slate-100 dark:bg-slate-700 rounded-xl flex items-center justify-center text-[10px] font-black text-slate-400 dark:text-slate-500 group-hover:bg-blue-600 group-hover:text-white transition-all shrink-0">
                                 {idx + 1}
                              </div>
                              <div className="min-w-0 flex-1">
-                                <h5 className="text-[11px] font-black text-slate-900 uppercase truncate leading-none mb-1">{r.fullName}</h5>
+                                <h5 className="text-[11px] font-black text-slate-900 dark:text-white uppercase truncate leading-none mb-1">{r.fullName}</h5>
                                 <div className="flex items-center space-x-3 text-[9px] font-bold text-slate-400">
                                    <span className="font-mono">{r.nik}</span>
                                    <span className="uppercase text-blue-500 font-black">{r.dusun}</span>
                                 </div>
                              </div>
-                             <div className="hidden sm:block text-[9px] font-black text-slate-300 uppercase">RT {r.rt}</div>
+                             <div className="hidden sm:block text-[9px] font-black text-slate-300 dark:text-slate-700 uppercase">RT {r.rt}</div>
                           </div>
                        ))}
                        {bnbaList.length === 0 && (
                          <div className="col-span-full py-20 text-center">
-                            <FileText size={48} className="mx-auto text-slate-200 mb-4" />
-                            <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Daftar nama tidak ditemukan.</p>
+                            <FileText size={48} className="mx-auto text-slate-200 dark:text-slate-700 mb-4" />
+                            <p className="text-[10px] font-black text-slate-400 dark:text-slate-600 uppercase tracking-widest">Daftar nama tidak ditemukan.</p>
                          </div>
                        )}
                     </div>
                  </div>
               </div>
 
-              <div className="p-6 md:p-8 border-t border-slate-100 bg-white flex justify-center shrink-0">
+              <div className="p-6 md:p-8 border-t border-slate-100 dark:border-slate-800 bg-white dark:bg-slate-900 flex justify-center shrink-0">
                  <button 
                    onClick={() => setSelectedBNBA(null)}
-                   className="px-12 py-4 bg-slate-900 text-white rounded-[1.5rem] text-[10px] font-black uppercase tracking-widest hover:opacity-90 shadow-2xl transition-all"
+                   className="px-12 py-4 bg-slate-950 text-white rounded-[1.5rem] text-[10px] font-black uppercase tracking-widest hover:opacity-90 shadow-2xl transition-all"
                  >
                    Tutup Daftar BNBA
                  </button>

@@ -263,24 +263,24 @@ const PopulationManagement: React.FC<PopulationManagementProps> = ({ residents, 
     <div className="space-y-4 md:space-y-6 pb-10">
       {(isImporting || isPreparingPDF) && (
         <div className="fixed inset-0 z-[100] flex items-center justify-center bg-slate-900/60 backdrop-blur-md no-print">
-          <div className="bg-white p-10 rounded-3xl shadow-2xl text-center max-w-sm">
+          <div className="bg-white dark:bg-slate-800 p-10 rounded-3xl shadow-2xl text-center max-w-sm">
              <Loader2 className="mx-auto text-blue-600 animate-spin mb-4" size={56} />
-             <h3 className="text-xl font-black text-slate-900 tracking-tight uppercase">
+             <h3 className="text-xl font-black text-slate-900 dark:text-white tracking-tight uppercase">
                 {isPreparingPDF ? "Menyiapkan PDF..." : "Memproses..."}
              </h3>
-             <p className="text-slate-500 text-[10px] font-bold mt-2 leading-relaxed uppercase">Mohon tunggu sejenak.</p>
+             <p className="text-slate-500 dark:text-slate-400 text-[10px] font-bold mt-2 leading-relaxed uppercase">Mohon tunggu sejenak.</p>
           </div>
         </div>
       )}
 
       {/* Main Action Bar */}
-      <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-3 md:gap-4 bg-white p-3 md:p-4 rounded-2xl md:rounded-3xl shadow-sm border border-slate-200 no-print">
-        <div className="flex items-center bg-slate-100 rounded-xl md:rounded-2xl px-4 py-2.5 md:py-3 border border-slate-200 w-full lg:max-w-xs focus-within:bg-white focus-within:ring-2 focus-within:ring-blue-500/10 transition-all shrink-0">
+      <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-3 md:gap-4 bg-white dark:bg-slate-900 p-3 md:p-4 rounded-2xl md:rounded-3xl shadow-sm border border-slate-200 dark:border-slate-800 no-print">
+        <div className="flex items-center bg-slate-100 dark:bg-slate-800 rounded-xl md:rounded-2xl px-4 py-2.5 md:py-3 border border-slate-200 dark:border-slate-700 w-full lg:max-w-xs focus-within:bg-white dark:focus-within:bg-slate-800 focus-within:ring-2 focus-within:ring-blue-500/10 transition-all shrink-0">
           <Search size={16} className="text-slate-400 mr-2 md:mr-3 shrink-0" />
           <input 
             type="text" 
             placeholder="Cari Nama/NIK/KK..."
-            className="bg-transparent border-none outline-none text-xs md:text-sm w-full font-bold"
+            className="bg-transparent border-none outline-none text-xs md:text-sm w-full font-bold dark:text-white"
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
           />
@@ -296,26 +296,26 @@ const PopulationManagement: React.FC<PopulationManagementProps> = ({ residents, 
             <span className="sm:hidden">PDF</span>
           </button>
 
-          <button onClick={handleDownloadCSV} className="flex items-center space-x-1.5 px-4 py-2.5 bg-emerald-50 border border-emerald-200 rounded-xl md:rounded-2xl text-[9px] font-black text-emerald-700 hover:bg-emerald-100 transition-all uppercase tracking-widest">
+          <button onClick={handleDownloadCSV} className="flex items-center space-x-1.5 px-4 py-2.5 bg-emerald-50 dark:bg-emerald-900/20 border border-emerald-200 dark:border-emerald-800 rounded-xl md:rounded-2xl text-[9px] font-black text-emerald-700 dark:text-emerald-400 hover:bg-emerald-100 transition-all uppercase tracking-widest">
             <Download size={14} />
             <span className="hidden sm:inline">Ekspor CSV</span>
             <span className="sm:hidden">CSV</span>
           </button>
           
-          <button onClick={downloadTemplate} className="flex items-center space-x-1.5 px-3 py-2.5 bg-white border border-slate-200 rounded-xl md:rounded-2xl text-[9px] font-black text-slate-700 hover:bg-slate-50 transition-all uppercase tracking-widest">
+          <button onClick={downloadTemplate} className="flex items-center space-x-1.5 px-3 py-2.5 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl md:rounded-2xl text-[9px] font-black text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700 transition-all uppercase tracking-widest">
             <BookOpen size={14} />
             <span className="hidden sm:inline">Format</span>
             <span className="sm:hidden">FMT</span>
           </button>
           
-          <label className="flex items-center space-x-1.5 px-3 py-2.5 bg-blue-50 border border-blue-200 rounded-xl md:rounded-2xl text-[9px] font-black text-blue-700 hover:bg-blue-100 transition-all cursor-pointer uppercase tracking-widest">
+          <label className="flex items-center space-x-1.5 px-3 py-2.5 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-xl md:rounded-2xl text-[9px] font-black text-blue-700 dark:text-blue-400 hover:bg-blue-100 transition-all cursor-pointer uppercase tracking-widest">
             <Upload size={14} />
             <span className="hidden sm:inline">Import</span>
             <span className="sm:hidden">IMP</span>
             <input ref={fileInputRef} type="file" className="hidden" onChange={handleImport} accept=".csv" />
           </label>
 
-          <button onClick={() => setIsAddModalOpen(true)} className="flex items-center space-x-2 px-5 py-2.5 bg-slate-900 text-white rounded-xl md:rounded-2xl text-[9px] font-black hover:bg-slate-800 transition-all shadow-md uppercase tracking-widest">
+          <button onClick={() => setIsAddModalOpen(true)} className="flex items-center space-x-2 px-5 py-2.5 bg-slate-900 dark:bg-blue-600 text-white rounded-xl md:rounded-2xl text-[9px] font-black hover:bg-slate-800 dark:hover:bg-blue-500 transition-all shadow-md uppercase tracking-widest">
             <Plus size={16} />
             <span>Tambah KK</span>
           </button>
@@ -323,91 +323,91 @@ const PopulationManagement: React.FC<PopulationManagementProps> = ({ residents, 
       </div>
 
       {/* Advanced Filter Bar */}
-      <div className="flex items-center space-x-2 md:space-x-3 bg-white p-2 md:p-3 rounded-xl md:rounded-[2rem] border border-slate-200 shadow-sm no-print overflow-x-auto whitespace-nowrap scrollbar-hide">
-        <div className="flex items-center bg-slate-50 border border-slate-200 rounded-lg md:rounded-xl px-3 py-1.5 md:px-4 md:py-2 min-w-[120px]">
+      <div className="flex items-center space-x-2 md:space-x-3 bg-white dark:bg-slate-900 p-2 md:p-3 rounded-xl md:rounded-[2rem] border border-slate-200 dark:border-slate-800 shadow-sm no-print overflow-x-auto whitespace-nowrap scrollbar-hide">
+        <div className="flex items-center bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg md:rounded-xl px-3 py-1.5 md:px-4 md:py-2 min-w-[120px]">
            <MapPin size={12} className="text-slate-400 mr-2" />
-           <select className="bg-transparent text-[10px] md:text-xs font-black uppercase outline-none w-full" value={filters.dusun} onChange={(e) => setFilters({ ...filters, dusun: e.target.value, rw: '', rt: '' })}>
-             <option value="">Dusun</option>
-             {dusunList.map(d => <option key={d} value={d}>{d}</option>)}
+           <select className="bg-transparent text-[10px] md:text-xs font-black uppercase outline-none w-full dark:text-white" value={filters.dusun} onChange={(e) => setFilters({ ...filters, dusun: e.target.value, rw: '', rt: '' })}>
+             <option value="" className="dark:bg-slate-900">Dusun</option>
+             {dusunList.map(d => <option key={d} value={d} className="dark:bg-slate-900">{d}</option>)}
            </select>
         </div>
-        <div className="flex items-center bg-slate-50 border border-slate-200 rounded-lg md:rounded-xl px-3 py-1.5 md:px-4 md:py-2 min-w-[80px]">
-           <span className="text-[9px] font-black text-slate-400 mr-1.5">RW</span>
-           <select className="bg-transparent text-[10px] md:text-xs font-black outline-none w-full" value={filters.rw} onChange={(e) => setFilters({ ...filters, rw: e.target.value, rt: '' })} disabled={!filters.dusun}>
-             <option value="">--</option>
-             {rwList.map(rw => <option key={rw} value={rw}>{rw}</option>)}
+        <div className="flex items-center bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg md:rounded-xl px-3 py-1.5 md:px-4 md:py-2 min-w-[80px]">
+           <span className="text-[9px] font-black text-slate-400 mr-1.5 uppercase">RW</span>
+           <select className="bg-transparent text-[10px] md:text-xs font-black outline-none w-full dark:text-white" value={filters.rw} onChange={(e) => setFilters({ ...filters, rw: e.target.value, rt: '' })} disabled={!filters.dusun}>
+             <option value="" className="dark:bg-slate-900">--</option>
+             {rwList.map(rw => <option key={rw} value={rw} className="dark:bg-slate-900">{rw}</option>)}
            </select>
         </div>
-        <div className="flex items-center bg-slate-50 border border-slate-200 rounded-lg md:rounded-xl px-3 py-1.5 md:px-4 md:py-2 min-w-[80px]">
-           <span className="text-[9px] font-black text-slate-400 mr-1.5">RT</span>
-           <select className="bg-transparent text-[10px] md:text-xs font-black outline-none w-full" value={filters.rt} onChange={(e) => setFilters({ ...filters, rt: e.target.value })} disabled={!filters.rw}>
-             <option value="">--</option>
-             {rtList.map(rt => <option key={rt} value={rt}>{rt}</option>)}
+        <div className="flex items-center bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg md:rounded-xl px-3 py-1.5 md:px-4 md:py-2 min-w-[80px]">
+           <span className="text-[9px] font-black text-slate-400 mr-1.5 uppercase">RT</span>
+           <select className="bg-transparent text-[10px] md:text-xs font-black outline-none w-full dark:text-white" value={filters.rt} onChange={(e) => setFilters({ ...filters, rt: e.target.value })} disabled={!filters.rw}>
+             <option value="" className="dark:bg-slate-900">--</option>
+             {rtList.map(rt => <option key={rt} value={rt} className="dark:bg-slate-900">{rt}</option>)}
            </select>
         </div>
-        <button onClick={() => setFilters({ dusun: '', rw: '', rt: '' })} className="p-2 text-slate-400 hover:text-slate-900 transition-all shrink-0"><RefreshCcw size={14} /></button>
-        <div className="hidden sm:flex ml-auto items-center space-x-2 text-[9px] font-black text-slate-400 uppercase tracking-widest pr-2">
+        <button onClick={() => setFilters({ dusun: '', rw: '', rt: '' })} className="p-2 text-slate-400 hover:text-slate-900 dark:hover:text-white transition-all shrink-0"><RefreshCcw size={14} /></button>
+        <div className="hidden sm:flex ml-auto items-center space-x-2 text-[9px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest pr-2">
           <Info size={12} />
           <span>{filteredData.length} KK</span>
         </div>
       </div>
 
       {/* Screen Table */}
-      <div className="bg-white rounded-xl md:rounded-[2rem] shadow-sm border border-slate-200 overflow-hidden no-print">
+      <div className="bg-white dark:bg-slate-900 rounded-xl md:rounded-[2rem] shadow-sm border border-slate-200 dark:border-slate-800 overflow-hidden no-print">
         <div className="overflow-x-auto">
           <table className="w-full text-left border-collapse min-w-[900px]">
-            <thead className="bg-slate-50 border-b border-slate-200">
+            <thead className="bg-slate-50 dark:bg-slate-800/50 border-b border-slate-200 dark:border-slate-800">
               <tr>
                 <th className="px-4 py-4 w-10 text-center">
                   <button onClick={() => selectedIds.length === filteredData.length ? setSelectedIds([]) : setSelectedIds(filteredData.map(r => r.id))} className="text-slate-400">
                     {selectedIds.length === filteredData.length && filteredData.length > 0 ? <CheckSquare size={18} className="text-blue-600" /> : <Square size={18} />}
                   </button>
                 </th>
-                <th className="px-3 py-4 text-[9px] font-black text-slate-400 uppercase tracking-widest text-center w-40">Aksi</th>
-                <th className="px-3 py-4 text-[9px] font-black text-slate-400 uppercase tracking-widest">Alamat</th>
-                <th className="px-3 py-4 text-[9px] font-black text-slate-400 uppercase tracking-widest">Identitas</th>
-                <th className="px-3 py-4 text-[9px] font-black text-slate-400 uppercase tracking-widest">Kepala Keluarga</th>
-                <th className="px-3 py-4 text-[9px] font-black text-slate-400 uppercase tracking-widest text-center">Profil</th>
-                <th className="px-3 py-4 text-[9px] font-black text-slate-400 uppercase tracking-widest">Kerja</th>
+                <th className="px-3 py-4 text-[9px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest text-center w-40">Aksi</th>
+                <th className="px-3 py-4 text-[9px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest">Alamat</th>
+                <th className="px-3 py-4 text-[9px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest">Identitas</th>
+                <th className="px-3 py-4 text-[9px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest">Kepala Keluarga</th>
+                <th className="px-3 py-4 text-[9px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest text-center">Profil</th>
+                <th className="px-3 py-4 text-[9px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest">Kerja</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-slate-100">
+            <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
               {filteredData.map((r) => (
-                <tr key={r.id} className="hover:bg-blue-50/20 transition-all">
+                <tr key={r.id} className="hover:bg-blue-50/20 dark:hover:bg-blue-900/10 transition-all">
                   <td className="px-4 py-5 text-center">
-                    <button onClick={() => setSelectedIds(prev => prev.includes(r.id) ? prev.filter(i => i !== r.id) : [...prev, r.id])} className="text-slate-200">
+                    <button onClick={() => setSelectedIds(prev => prev.includes(r.id) ? prev.filter(i => i !== r.id) : [...prev, r.id])} className="text-slate-200 dark:text-slate-700">
                       {selectedIds.includes(r.id) ? <CheckSquare size={20} className="text-blue-600" /> : <Square size={20} />}
                     </button>
                   </td>
                   <td className="px-3 py-5">
                     <div className="flex items-center justify-center space-x-1">
-                      <button onClick={() => setViewingFamilyKK(r.noKK)} className="p-2 bg-blue-50 text-blue-600 rounded-lg hover:bg-blue-600 hover:text-white transition-all shadow-sm" title="Anggota"><Eye size={14} /></button>
-                      <button onClick={() => setEditingResident(r)} className="p-2 bg-slate-50 text-slate-600 rounded-lg hover:bg-slate-900 hover:text-white transition-all shadow-sm" title="Edit"><Edit3 size={14} /></button>
-                      <button onClick={() => setMovingFamily(r)} className="p-2 bg-amber-50 text-amber-600 rounded-lg hover:bg-amber-600 hover:text-white transition-all shadow-sm" title="Pindah"><PlaneLanding size={14} /></button>
-                      <button onClick={() => setDeletingFamily({ item: r })} className="p-2 bg-rose-50 text-rose-600 rounded-lg hover:bg-rose-600 hover:text-white transition-all shadow-sm" title="Hapus"><Trash2 size={14} /></button>
+                      <button onClick={() => setViewingFamilyKK(r.noKK)} className="p-2 bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 rounded-lg hover:bg-blue-600 hover:text-white transition-all shadow-sm" title="Anggota"><Eye size={14} /></button>
+                      <button onClick={() => setEditingResident(r)} className="p-2 bg-slate-50 dark:bg-slate-800 text-slate-600 dark:text-slate-400 rounded-lg hover:bg-slate-900 dark:hover:bg-blue-600 hover:text-white transition-all shadow-sm" title="Edit"><Edit3 size={14} /></button>
+                      <button onClick={() => setMovingFamily(r)} className="p-2 bg-amber-50 dark:bg-amber-900/30 text-amber-600 dark:text-amber-400 rounded-lg hover:bg-amber-600 hover:text-white transition-all shadow-sm" title="Pindah"><PlaneLanding size={14} /></button>
+                      <button onClick={() => setDeletingFamily({ item: r })} className="p-2 bg-rose-50 dark:bg-rose-900/30 text-rose-600 dark:text-rose-400 rounded-lg hover:bg-rose-600 hover:text-white transition-all shadow-sm" title="Hapus"><Trash2 size={14} /></button>
                     </div>
                   </td>
                   <td className="px-3 py-5">
-                    <div className="text-[11px] font-black text-slate-800">{r.dusun}</div>
+                    <div className="text-[11px] font-black text-slate-800 dark:text-slate-200">{r.dusun}</div>
                     <div className="text-[9px] text-slate-400 font-bold">RT {r.rt} / RW {r.rw}</div>
                   </td>
                   <td className="px-3 py-5">
-                    <div className="text-[11px] font-black text-blue-600 truncate max-w-[100px]" onClick={() => setViewingFamilyKK(r.noKK)}>{r.noKK}</div>
+                    <div className="text-[11px] font-black text-blue-600 dark:text-blue-400 truncate max-w-[100px] cursor-pointer" onClick={() => setViewingFamilyKK(r.noKK)}>{r.noKK}</div>
                     <div className="text-[9px] text-slate-400 font-mono">{r.nik}</div>
                   </td>
-                  <td className="px-3 py-5 text-[11px] font-black text-slate-800 uppercase max-w-[150px] truncate">{r.fullName}</td>
+                  <td className="px-3 py-5 text-[11px] font-black text-slate-800 dark:text-slate-200 uppercase max-w-[150px] truncate">{r.fullName}</td>
                   <td className="px-3 py-5 text-center">
-                    <div className="text-[11px] font-black text-slate-900">{calculateAge(r.birthDate)} <span className="text-[9px] font-normal text-slate-400">Thn</span></div>
-                    <div className={`text-[8px] uppercase font-black px-1.5 py-0.5 rounded-full inline-block mt-0.5 ${r.gender.includes('Perempuan') ? 'bg-pink-100 text-pink-700' : 'bg-blue-100 text-blue-700'}`}>
+                    <div className="text-[11px] font-black text-slate-900 dark:text-white">{calculateAge(r.birthDate)} <span className="text-[9px] font-normal text-slate-400">Thn</span></div>
+                    <div className={`text-[8px] uppercase font-black px-1.5 py-0.5 rounded-full inline-block mt-0.5 ${r.gender.includes('Perempuan') ? 'bg-pink-100 dark:bg-pink-900/40 text-pink-700 dark:text-pink-300' : 'bg-blue-100 dark:bg-blue-900/40 text-blue-700 dark:text-blue-300'}`}>
                       {r.gender.includes('Laki') ? 'L' : 'P'}
                     </div>
                   </td>
-                  <td className="px-3 py-5 text-[10px] text-slate-500 font-medium truncate max-w-[120px]">{r.job || '-'}</td>
+                  <td className="px-3 py-5 text-[10px] text-slate-500 dark:text-slate-400 font-medium truncate max-w-[120px]">{r.job || '-'}</td>
                 </tr>
               ))}
               {filteredData.length === 0 && (
                 <tr>
-                  <td colSpan={7} className="px-6 py-20 text-center text-slate-400 font-black uppercase text-[10px] tracking-widest">Data tidak ditemukan.</td>
+                  <td colSpan={7} className="px-6 py-20 text-center text-slate-400 dark:text-slate-600 font-black uppercase text-[10px] tracking-widest">Data tidak ditemukan.</td>
                 </tr>
               )}
             </tbody>
@@ -423,15 +423,15 @@ const PopulationManagement: React.FC<PopulationManagementProps> = ({ residents, 
 
       {deletingFamily && (
         <div className="fixed inset-0 z-[120] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-md animate-in fade-in">
-          <div className="bg-white rounded-2xl md:rounded-[2.5rem] shadow-2xl w-full max-sm overflow-hidden border border-slate-200 animate-in zoom-in-95">
-            <div className="p-5 bg-slate-900 text-white flex justify-between items-center uppercase font-black tracking-widest text-[10px] md:text-xs">
+          <div className="bg-white dark:bg-slate-900 rounded-2xl md:rounded-[2.5rem] shadow-2xl w-full max-w-sm overflow-hidden border border-slate-200 dark:border-slate-800 animate-in zoom-in-95">
+            <div className="p-5 bg-slate-950 text-white flex justify-between items-center uppercase font-black tracking-widest text-[10px] md:text-xs">
                <span>Konfirmasi Hapus</span>
                <button onClick={() => setDeletingFamily(null)}><X size={20}/></button>
             </div>
             <div className="p-6 md:p-8 space-y-4">
-               <div className="text-center bg-rose-50 p-4 rounded-xl border border-rose-100">
-                 <p className="text-[9px] font-black text-rose-600 uppercase mb-1.5 tracking-widest">Data Akan Dipindahkan ke Arsip</p>
-                 <h5 className="text-sm md:text-base font-black text-slate-900 uppercase leading-tight">{deletingFamily.item.fullName}</h5>
+               <div className="text-center bg-rose-50 dark:bg-rose-900/20 p-4 rounded-xl border border-rose-100 dark:border-rose-900/30">
+                 <p className="text-[9px] font-black text-rose-600 dark:text-rose-400 uppercase mb-1.5 tracking-widest">Data Akan Dipindahkan ke Arsip</p>
+                 <h5 className="text-sm md:text-base font-black text-slate-900 dark:text-white uppercase leading-tight">{deletingFamily.item.fullName}</h5>
                </div>
                <div className="space-y-2.5">
                  <button onClick={() => {
@@ -453,7 +453,7 @@ const MoveFamilyModal: React.FC<{ item: Resident, onClose: () => void, onConfirm
   const [date, setDate] = useState(new Date().toISOString().split('T')[0]);
   return (
     <div className="fixed inset-0 z-[120] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-md animate-in fade-in">
-      <div className="bg-white rounded-2xl md:rounded-[2.5rem] shadow-2xl w-full max-w-sm overflow-hidden border border-slate-200 animate-in zoom-in-95">
+      <div className="bg-white dark:bg-slate-900 rounded-2xl md:rounded-[2.5rem] shadow-2xl w-full max-w-sm overflow-hidden border border-slate-200 dark:border-slate-800 animate-in zoom-in-95">
         <div className="p-5 bg-amber-500 text-white flex justify-between items-center uppercase font-black tracking-widest text-[10px] md:text-xs">
            <div className="flex items-center space-x-2">
              <PlaneLanding size={16} />
@@ -462,18 +462,18 @@ const MoveFamilyModal: React.FC<{ item: Resident, onClose: () => void, onConfirm
            <button onClick={onClose}><X size={20}/></button>
         </div>
         <div className="p-6 md:p-8 space-y-5">
-           <div className="text-center bg-amber-50 p-4 rounded-xl border border-amber-100">
-             <h5 className="text-sm md:text-base font-black text-slate-900 uppercase leading-tight">{item.fullName}</h5>
-             <p className="text-[9px] text-slate-400 font-mono mt-1 uppercase tracking-tighter">KK: {item.noKK}</p>
+           <div className="text-center bg-amber-50 dark:bg-amber-900/20 p-4 rounded-xl border border-amber-100 dark:border-amber-900/30">
+             <h5 className="text-sm md:text-base font-black text-slate-900 dark:text-white uppercase leading-tight">{item.fullName}</h5>
+             <p className="text-[9px] text-slate-400 dark:text-slate-500 font-mono mt-1 uppercase tracking-tighter">KK: {item.noKK}</p>
            </div>
            <div className="space-y-4">
               <div>
                 <label className="text-[9px] font-black text-slate-400 uppercase tracking-widest block mb-1.5">Tujuan Pindah</label>
-                <input type="text" value={dest} onChange={e => setDest(e.target.value)} className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 font-bold text-xs outline-none focus:bg-white transition-all uppercase" placeholder="Nama Kota/Kec/Desa" required />
+                <input type="text" value={dest} onChange={e => setDest(e.target.value)} className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 dark:text-white rounded-xl px-4 py-3 font-bold text-xs outline-none focus:bg-white dark:focus:bg-slate-800 transition-all uppercase" placeholder="Nama Kota/Kec/Desa" required />
               </div>
               <div>
                 <label className="text-[9px] font-black text-slate-400 uppercase tracking-widest block mb-1.5">Tanggal</label>
-                <input type="date" value={date} onChange={e => setDate(e.target.value)} className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 font-bold text-xs outline-none focus:bg-white transition-all" required />
+                <input type="date" value={date} onChange={e => setDate(e.target.value)} className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 dark:text-white rounded-xl px-4 py-3 font-bold text-xs outline-none focus:bg-white dark:focus:bg-slate-800 transition-all" required />
               </div>
            </div>
            <div className="space-y-2.5">
