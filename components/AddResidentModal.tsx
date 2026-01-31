@@ -46,6 +46,8 @@ const AddResidentModal: React.FC<AddResidentModalProps> = ({ onClose, onSave }) 
     }
   ]);
 
+  const inputClass = "w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl px-4 py-3 text-sm font-bold text-slate-900 dark:text-white outline-none focus:ring-2 focus:ring-blue-500/20 transition-all";
+
   const RELATIONSHIP_OPTIONS = [
     "1. Kepala Keluarga", "2. Istri", "3. Anak Kandung/Tiri", "4. Anak Angkat", 
     "5. Menantu", "6. Cucu", "7. Orang Tua", "8. Pembantu/Sopir", "9. Lainnya"
@@ -135,8 +137,8 @@ const AddResidentModal: React.FC<AddResidentModalProps> = ({ onClose, onSave }) 
 
   return (
     <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-black/70 backdrop-blur-md animate-in fade-in duration-200">
-      <div className="bg-white rounded-[2.5rem] shadow-2xl w-full max-w-6xl max-h-[95vh] overflow-hidden flex flex-col animate-in zoom-in-95 border border-slate-200">
-        <div className="p-8 border-b border-slate-200 flex items-center justify-between bg-slate-900 text-white">
+      <div className="bg-white dark:bg-slate-900 rounded-[2.5rem] shadow-2xl w-full max-w-6xl max-h-[95vh] overflow-hidden flex flex-col animate-in zoom-in-95 border border-slate-200 dark:border-slate-800">
+        <div className="p-8 border-b border-slate-200 dark:border-slate-800 flex items-center justify-between bg-slate-900 text-white">
           <div className="flex items-center space-x-6">
             <div className="w-14 h-14 bg-blue-600 rounded-2xl flex items-center justify-center text-white shadow-xl shadow-blue-500/20">
               <Users size={28} />
@@ -149,19 +151,19 @@ const AddResidentModal: React.FC<AddResidentModalProps> = ({ onClose, onSave }) 
           <button onClick={onClose} className="p-2 hover:bg-slate-800 rounded-xl transition-all"><X size={28} /></button>
         </div>
 
-        <form onSubmit={handleSubmit} className="flex-1 overflow-y-auto p-8 space-y-12 bg-slate-50/20">
+        <form onSubmit={handleSubmit} className="flex-1 overflow-y-auto p-8 space-y-12 bg-slate-50/20 dark:bg-slate-900/50">
           <section className="space-y-6">
             <div className="flex items-center space-x-3">
               <div className="w-2 h-8 bg-blue-600 rounded-full"></div>
-              <h4 className="text-sm font-black text-slate-900 uppercase tracking-widest">Wilayah & Nomor KK</h4>
+              <h4 className="text-sm font-black text-slate-900 dark:text-white uppercase tracking-widest">Wilayah & Nomor KK</h4>
             </div>
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-6 bg-white p-8 rounded-3xl border border-slate-100 shadow-sm">
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-6 bg-white dark:bg-slate-800 p-8 rounded-3xl border border-slate-100 dark:border-slate-700 shadow-sm">
               <div className="md:col-span-1">
                 <label className="block text-[10px] font-black text-slate-400 mb-2 uppercase">No. KK (16 Digit)</label>
                 <div className="relative">
-                  <input type="text" name="noKK" value={familyData.noKK} onChange={handleFamilyChange} maxLength={16} className="w-full bg-slate-50 border border-slate-200 rounded-2xl px-4 py-3 text-sm font-bold outline-none" required />
+                  <input type="text" name="noKK" value={familyData.noKK} onChange={handleFamilyChange} maxLength={16} className={inputClass} required />
                   {familyData.noKK.length > 0 && familyData.noKK.length < 16 && (
-                    <div className="absolute right-3 top-1/2 -translate-y-1/2 text-[9px] font-black text-amber-500 flex items-center">
+                    <div className="absolute right-3 top-1/2 -translate-y-1/2 text-[9px] font-black text-amber-500 flex items-center bg-white dark:bg-slate-800">
                        <AlertCircle size={10} className="mr-0.5" /> {familyData.noKK.length}/16
                     </div>
                   )}
@@ -169,16 +171,16 @@ const AddResidentModal: React.FC<AddResidentModalProps> = ({ onClose, onSave }) 
               </div>
               <div className="md:col-span-1">
                 <label className="block text-[10px] font-black text-slate-400 mb-2 uppercase">Dusun</label>
-                <input type="text" name="dusun" value={familyData.dusun} onChange={handleFamilyChange} className="w-full bg-slate-50 border border-slate-200 rounded-2xl px-4 py-3 text-sm font-bold outline-none" required />
+                <input type="text" name="dusun" value={familyData.dusun} onChange={handleFamilyChange} className={inputClass} required />
               </div>
               <div className="flex gap-4">
                  <div className="flex-1">
                    <label className="block text-[10px] font-black text-slate-400 mb-2 uppercase">RT</label>
-                   <input type="text" name="rt" value={familyData.rt} onChange={handleFamilyChange} className="w-full bg-slate-50 border border-slate-200 rounded-2xl px-4 py-3 text-sm font-bold text-center" required />
+                   <input type="text" name="rt" value={familyData.rt} onChange={handleFamilyChange} className={`${inputClass} text-center`} required />
                  </div>
                  <div className="flex-1">
                    <label className="block text-[10px] font-black text-slate-400 mb-2 uppercase">RW</label>
-                   <input type="text" name="rw" value={familyData.rw} onChange={handleFamilyChange} className="w-full bg-slate-50 border border-slate-200 rounded-2xl px-4 py-3 text-sm font-bold text-center" required />
+                   <input type="text" name="rw" value={familyData.rw} onChange={handleFamilyChange} className={`${inputClass} text-center`} required />
                  </div>
               </div>
             </div>
@@ -188,7 +190,7 @@ const AddResidentModal: React.FC<AddResidentModalProps> = ({ onClose, onSave }) 
             <div className="flex items-center justify-between">
               <div className="flex items-center space-x-3">
                 <div className="w-2 h-8 bg-emerald-500 rounded-full"></div>
-                <h4 className="text-sm font-black text-slate-900 uppercase tracking-widest">Daftar Anggota</h4>
+                <h4 className="text-sm font-black text-slate-900 dark:text-white uppercase tracking-widest">Daftar Anggota</h4>
               </div>
               <button type="button" onClick={addMember} className="flex items-center space-x-2 px-6 py-3 bg-emerald-500 text-white rounded-2xl text-xs font-black hover:bg-emerald-600 transition-all shadow-lg shadow-emerald-500/20">
                 <Plus size={18} />
@@ -198,26 +200,26 @@ const AddResidentModal: React.FC<AddResidentModalProps> = ({ onClose, onSave }) 
 
             <div className="space-y-6">
               {members.map((member, index) => (
-                <div key={index} className="relative bg-white border border-slate-100 p-8 rounded-[2rem] shadow-sm hover:shadow-md transition-all group">
-                  <div className="absolute -left-4 top-8 bg-slate-900 text-white w-10 h-10 rounded-2xl flex items-center justify-center font-black text-sm shadow-xl">
+                <div key={index} className="relative bg-white dark:bg-slate-800 border border-slate-100 dark:border-slate-700 p-8 rounded-[2rem] shadow-sm hover:shadow-md transition-all group">
+                  <div className="absolute -left-4 top-8 bg-slate-900 dark:bg-blue-600 text-white w-10 h-10 rounded-2xl flex items-center justify-center font-black text-sm shadow-xl">
                     {index + 1}
                   </div>
                   {index > 0 && (
-                    <button type="button" onClick={() => removeMember(index)} className="absolute -right-2 -top-2 p-3 bg-rose-50 text-rose-600 rounded-2xl hover:bg-rose-600 hover:text-white transition-all shadow-sm">
+                    <button type="button" onClick={() => removeMember(index)} className="absolute -right-2 -top-2 p-3 bg-rose-50 dark:bg-rose-900/20 text-rose-600 rounded-2xl hover:bg-rose-600 hover:text-white transition-all shadow-sm">
                       <Trash2 size={20} />
                     </button>
                   )}
                   <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
                     <div className="lg:col-span-2">
                       <label className="block text-[9px] font-black text-slate-400 mb-1 uppercase tracking-widest">Nama Lengkap</label>
-                      <input type="text" name="fullName" value={member.fullName} onChange={(e) => handleMemberChange(index, e)} className="w-full bg-slate-50 border border-slate-200 rounded-2xl px-4 py-3 text-sm font-black uppercase outline-none" required />
+                      <input type="text" name="fullName" value={member.fullName} onChange={(e) => handleMemberChange(index, e)} className={`${inputClass} font-black uppercase`} required />
                     </div>
                     <div>
                       <label className="block text-[9px] font-black text-slate-400 mb-1 uppercase tracking-widest">NIK (16 Digit)</label>
                       <div className="relative">
-                        <input type="text" name="nik" value={member.nik} onChange={(e) => handleMemberChange(index, e)} maxLength={16} className="w-full bg-slate-50 border border-slate-200 rounded-2xl px-4 py-3 text-sm font-bold outline-none" required />
+                        <input type="text" name="nik" value={member.nik} onChange={(e) => handleMemberChange(index, e)} maxLength={16} className={inputClass} required />
                         {member.nik.length > 0 && member.nik.length < 16 && (
-                          <div className="absolute right-3 top-1/2 -translate-y-1/2 text-[9px] font-black text-amber-500 flex items-center">
+                          <div className="absolute right-3 top-1/2 -translate-y-1/2 text-[9px] font-black text-amber-500 flex items-center bg-white dark:bg-slate-800">
                              <AlertCircle size={10} className="mr-0.5" /> {member.nik.length}/16
                           </div>
                         )}
@@ -225,30 +227,30 @@ const AddResidentModal: React.FC<AddResidentModalProps> = ({ onClose, onSave }) 
                     </div>
                     <div>
                       <label className="block text-[9px] font-black text-slate-400 mb-1 uppercase tracking-widest">Hubungan</label>
-                      <select name="relationship" value={member.relationship} onChange={(e) => handleMemberChange(index, e)} className="w-full bg-slate-50 border border-slate-200 rounded-2xl px-4 py-3 text-sm font-bold outline-none">
-                        {RELATIONSHIP_OPTIONS.map(o => <option key={o} value={o}>{o}</option>)}
+                      <select name="relationship" value={member.relationship} onChange={(e) => handleMemberChange(index, e)} className={inputClass}>
+                        {RELATIONSHIP_OPTIONS.map(o => <option key={o} value={o} className="dark:bg-slate-800">{o}</option>)}
                       </select>
                     </div>
                     <div>
                       <label className="block text-[9px] font-black text-slate-400 mb-1 uppercase tracking-widest">JK</label>
-                      <select name="gender" value={member.gender} onChange={(e) => handleMemberChange(index, e)} className="w-full bg-slate-50 border border-slate-200 rounded-2xl px-4 py-3 text-sm font-bold outline-none">
-                        {GENDER_OPTIONS.map(o => <option key={o} value={o}>{o}</option>)}
+                      <select name="gender" value={member.gender} onChange={(e) => handleMemberChange(index, e)} className={inputClass}>
+                        {GENDER_OPTIONS.map(o => <option key={o} value={o} className="dark:bg-slate-800">{o}</option>)}
                       </select>
                     </div>
                     <div>
                       <label className="block text-[9px] font-black text-slate-400 mb-1 uppercase tracking-widest">Tgl Lahir</label>
-                      <input type="date" name="birthDate" value={member.birthDate} onChange={(e) => handleMemberChange(index, e)} className="w-full bg-slate-50 border border-slate-200 rounded-2xl px-4 py-3 text-sm font-bold outline-none" required />
+                      <input type="date" name="birthDate" value={member.birthDate} onChange={(e) => handleMemberChange(index, e)} className={inputClass} required />
                     </div>
                     <div>
                       <label className="block text-[9px] font-black text-slate-400 mb-1 uppercase tracking-widest">Pendidikan</label>
-                      <select name="education" value={member.education} onChange={(e) => handleMemberChange(index, e)} className="w-full bg-slate-50 border border-slate-200 rounded-2xl px-4 py-3 text-sm font-bold outline-none">
-                        {EDUCATION_OPTIONS.map(o => <option key={o} value={o}>{o}</option>)}
+                      <select name="education" value={member.education} onChange={(e) => handleMemberChange(index, e)} className={inputClass}>
+                        {EDUCATION_OPTIONS.map(o => <option key={o} value={o} className="dark:bg-slate-800">{o}</option>)}
                       </select>
                     </div>
                     <div>
                       <label className="block text-[9px] font-black text-slate-400 mb-1 uppercase tracking-widest">Pekerjaan</label>
-                      <select name="job" value={member.job} onChange={(e) => handleMemberChange(index, e)} className="w-full bg-slate-50 border border-slate-200 rounded-2xl px-4 py-3 text-sm font-bold outline-none">
-                        {JOB_OPTIONS.map(o => <option key={o} value={o}>{o}</option>)}
+                      <select name="job" value={member.job} onChange={(e) => handleMemberChange(index, e)} className={inputClass}>
+                        {JOB_OPTIONS.map(o => <option key={o} value={o} className="dark:bg-slate-800">{o}</option>)}
                       </select>
                     </div>
                   </div>
@@ -258,14 +260,14 @@ const AddResidentModal: React.FC<AddResidentModalProps> = ({ onClose, onSave }) 
           </section>
         </form>
 
-        <div className="p-8 border-t border-slate-200 bg-white flex flex-col md:flex-row md:items-center justify-between gap-6">
+        <div className="p-8 border-t border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 flex flex-col md:flex-row md:items-center justify-between gap-6">
           <div className="flex items-center space-x-3 text-slate-400">
             <Info size={20} />
             <p className="text-[10px] font-bold uppercase tracking-widest italic">Data akan disimpan secara permanen di database aktif.</p>
           </div>
           <div className="flex items-center space-x-4">
-            <button type="button" onClick={onClose} className="px-10 py-4 border border-slate-200 rounded-2xl text-xs font-black text-slate-500 hover:bg-slate-100 transition-all uppercase tracking-widest">Batal</button>
-            <button type="submit" onClick={handleSubmit} className="px-12 py-4 bg-slate-900 text-white rounded-[1.5rem] text-sm font-black hover:bg-slate-800 shadow-2xl transition-all flex items-center space-x-3">
+            <button type="button" onClick={onClose} className="px-10 py-4 border border-slate-200 dark:border-slate-700 rounded-2xl text-xs font-black text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-800 transition-all uppercase tracking-widest">Batal</button>
+            <button type="submit" onClick={handleSubmit} className="px-12 py-4 bg-slate-900 dark:bg-blue-600 text-white rounded-[1.5rem] text-sm font-black hover:bg-slate-800 dark:hover:bg-blue-500 shadow-2xl transition-all flex items-center space-x-3">
               <Save size={20} />
               <span>SIMPAN KELUARGA ({members.length} JIWA)</span>
             </button>

@@ -37,6 +37,8 @@ const EditResidentModal: React.FC<EditResidentModalProps> = ({ resident, onClose
     setFormData(prev => ({ ...prev, pregnancyRisk: risk }));
   };
 
+  const inputClass = "w-full bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl px-4 py-3 text-sm font-bold text-slate-900 dark:text-white outline-none focus:ring-2 focus:ring-blue-500/20 transition-all";
+
   const RELATIONSHIP_OPTIONS = [
     "1. Kepala Keluarga", "2. Istri", "3. Anak Kandung/Tiri", "4. Anak Angkat", 
     "5. Menantu", "6. Cucu", "7. Orang Tua", "8. Pembantu/Sopir", "9. Lainnya"
@@ -69,10 +71,10 @@ const EditResidentModal: React.FC<EditResidentModalProps> = ({ resident, onClose
 
   return (
     <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in duration-200">
-      <div className="bg-white rounded-3xl shadow-2xl w-full max-w-4xl max-h-[90vh] overflow-hidden flex flex-col animate-in zoom-in-95 duration-200 border border-slate-200">
+      <div className="bg-white dark:bg-slate-900 rounded-3xl shadow-2xl w-full max-w-4xl max-h-[90vh] overflow-hidden flex flex-col animate-in zoom-in-95 duration-200 border border-slate-200 dark:border-slate-800">
         
         {/* Header */}
-        <div className="p-6 border-b border-slate-200 flex items-center justify-between bg-slate-900 text-white">
+        <div className="p-6 border-b border-slate-200 dark:border-slate-800 flex items-center justify-between bg-slate-900 text-white">
           <div className="flex items-center space-x-4">
             <div className="p-3 bg-blue-600 rounded-2xl">
               <User size={24} />
@@ -87,17 +89,17 @@ const EditResidentModal: React.FC<EditResidentModalProps> = ({ resident, onClose
           </button>
         </div>
 
-        <form id="editForm" onSubmit={handleSubmit} className="flex-1 overflow-y-auto p-8 space-y-10 bg-slate-50/20">
+        <form id="editForm" onSubmit={handleSubmit} className="flex-1 overflow-y-auto p-8 space-y-10 bg-slate-50/20 dark:bg-slate-900/50">
           
           <div className="space-y-6">
-            <h4 className="text-xs font-black text-blue-600 uppercase tracking-[0.2em] border-b border-slate-100 pb-2">I. Informasi Wilayah & Dokumen</h4>
+            <h4 className="text-xs font-black text-blue-600 dark:text-blue-400 uppercase tracking-[0.2em] border-b border-slate-100 dark:border-slate-800 pb-2">I. Informasi Wilayah & Dokumen</h4>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
               <div>
                 <label className="block text-[10px] font-black text-slate-400 mb-2 uppercase tracking-widest">Nomor KK (16 Digit)</label>
                 <div className="relative">
-                  <input type="text" name="noKK" value={formData.noKK} onChange={handleChange} maxLength={16} className="w-full bg-white border border-slate-200 rounded-2xl px-4 py-3 text-sm font-bold outline-none" required />
+                  <input type="text" name="noKK" value={formData.noKK} onChange={handleChange} maxLength={16} className={inputClass} required />
                   {formData.noKK.length > 0 && formData.noKK.length < 16 && (
-                    <div className="absolute right-3 top-1/2 -translate-y-1/2 text-[9px] font-black text-amber-500 flex items-center bg-white pl-1">
+                    <div className="absolute right-3 top-1/2 -translate-y-1/2 text-[9px] font-black text-amber-500 flex items-center bg-white dark:bg-slate-800 pl-1">
                        <AlertCircle size={10} className="mr-0.5" /> {formData.noKK.length}/16
                     </div>
                   )}
@@ -106,9 +108,9 @@ const EditResidentModal: React.FC<EditResidentModalProps> = ({ resident, onClose
               <div>
                 <label className="block text-[10px] font-black text-slate-400 mb-2 uppercase tracking-widest">NIK (16 Digit)</label>
                 <div className="relative">
-                  <input type="text" name="nik" value={formData.nik} onChange={handleChange} maxLength={16} className="w-full bg-white border border-slate-200 rounded-2xl px-4 py-3 text-sm font-bold outline-none" required />
+                  <input type="text" name="nik" value={formData.nik} onChange={handleChange} maxLength={16} className={inputClass} required />
                   {formData.nik.length > 0 && formData.nik.length < 16 && (
-                    <div className="absolute right-3 top-1/2 -translate-y-1/2 text-[9px] font-black text-amber-500 flex items-center bg-white pl-1">
+                    <div className="absolute right-3 top-1/2 -translate-y-1/2 text-[9px] font-black text-amber-500 flex items-center bg-white dark:bg-slate-800 pl-1">
                        <AlertCircle size={10} className="mr-0.5" /> {formData.nik.length}/16
                     </div>
                   )}
@@ -116,48 +118,60 @@ const EditResidentModal: React.FC<EditResidentModalProps> = ({ resident, onClose
               </div>
               <div>
                 <label className="block text-[10px] font-black text-slate-400 mb-2 uppercase tracking-widest">Dusun</label>
-                <input type="text" name="dusun" value={formData.dusun} onChange={handleChange} className="w-full bg-white border border-slate-200 rounded-2xl px-4 py-3 text-sm font-bold outline-none" required />
+                <input type="text" name="dusun" value={formData.dusun} onChange={handleChange} className={inputClass} required />
               </div>
               <div className="flex gap-2">
                  <div className="flex-1">
                    <label className="block text-[10px] font-black text-slate-400 mb-2 uppercase tracking-widest">RT</label>
-                   <input type="text" name="rt" value={formData.rt} onChange={handleChange} className="w-full bg-white border border-slate-200 rounded-2xl px-4 py-3 text-sm font-bold text-center outline-none" required />
+                   <input type="text" name="rt" value={formData.rt} onChange={handleChange} className={inputClass} required />
                  </div>
                  <div className="flex-1">
                    <label className="block text-[10px] font-black text-slate-400 mb-2 uppercase tracking-widest">RW</label>
-                   <input type="text" name="rw" value={formData.rw} onChange={handleChange} className="w-full bg-white border border-slate-200 rounded-2xl px-4 py-3 text-sm font-bold text-center outline-none" required />
+                   <input type="text" name="rw" value={formData.rw} onChange={handleChange} className={inputClass} required />
                  </div>
               </div>
             </div>
           </div>
 
           <div className="space-y-6">
-            <h4 className="text-xs font-black text-blue-600 uppercase tracking-[0.2em] border-b border-slate-100 pb-2">II. Biodata Penduduk</h4>
+            <h4 className="text-xs font-black text-blue-600 dark:text-blue-400 uppercase tracking-[0.2em] border-b border-slate-100 dark:border-slate-800 pb-2">II. Biodata Penduduk</h4>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
               <div className="lg:col-span-2">
                 <label className="block text-[10px] font-black text-slate-400 mb-2 uppercase tracking-widest">Nama Lengkap</label>
-                <input type="text" name="fullName" value={formData.fullName} onChange={handleChange} className="w-full bg-white border border-slate-200 rounded-2xl px-4 py-3 text-sm font-black uppercase outline-none" required />
+                <input type="text" name="fullName" value={formData.fullName} onChange={handleChange} className={`${inputClass} font-black uppercase`} required />
               </div>
               <div>
                 <label className="block text-[10px] font-black text-slate-400 mb-2 uppercase tracking-widest">Jenis Kelamin</label>
-                <select name="gender" value={formData.gender} onChange={handleChange} className="w-full bg-white border border-slate-200 rounded-2xl px-4 py-3 text-sm font-bold outline-none">
-                  {GENDER_OPTIONS.map(opt => <option key={opt} value={opt}>{opt}</option>)}
+                <select name="gender" value={formData.gender} onChange={handleChange} className={inputClass}>
+                  {GENDER_OPTIONS.map(opt => <option key={opt} value={opt} className="dark:bg-slate-800">{opt}</option>)}
                 </select>
               </div>
               <div>
                 <label className="block text-[10px] font-black text-slate-400 mb-2 uppercase tracking-widest">Status Hubungan</label>
-                <select name="relationship" value={formData.relationship} onChange={handleChange} className="w-full bg-white border border-slate-200 rounded-2xl px-4 py-3 text-sm font-bold outline-none">
-                  {RELATIONSHIP_OPTIONS.map(opt => <option key={opt} value={opt}>{opt}</option>)}
+                <select name="relationship" value={formData.relationship} onChange={handleChange} className={inputClass}>
+                  {RELATIONSHIP_OPTIONS.map(opt => <option key={opt} value={opt} className="dark:bg-slate-800">{opt}</option>)}
                 </select>
               </div>
               <div>
                 <label className="block text-[10px] font-black text-slate-400 mb-2 uppercase tracking-widest">Tanggal Lahir</label>
-                <input type="date" name="birthDate" value={formData.birthDate} onChange={handleChange} className="w-full bg-white border border-slate-200 rounded-2xl px-4 py-3 text-sm font-bold outline-none" required />
+                <input type="date" name="birthDate" value={formData.birthDate} onChange={handleChange} className={inputClass} required />
               </div>
               <div>
                 <label className="block text-[10px] font-black text-slate-400 mb-2 uppercase tracking-widest">Golongan Darah</label>
-                <select name="bloodType" value={formData.bloodType} onChange={handleChange} className="w-full bg-white border border-slate-200 rounded-2xl px-4 py-3 text-sm font-bold outline-none">
-                  {BLOOD_OPTIONS.map(opt => <option key={opt} value={opt}>{opt}</option>)}
+                <select name="bloodType" value={formData.bloodType} onChange={handleChange} className={inputClass}>
+                  {BLOOD_OPTIONS.map(opt => <option key={opt} value={opt} className="dark:bg-slate-800">{opt}</option>)}
+                </select>
+              </div>
+              <div>
+                <label className="block text-[10px] font-black text-slate-400 mb-2 uppercase tracking-widest">Pendidikan</label>
+                <select name="education" value={formData.education} onChange={handleChange} className={inputClass}>
+                  {EDUCATION_OPTIONS.map(opt => <option key={opt} value={opt} className="dark:bg-slate-800">{opt}</option>)}
+                </select>
+              </div>
+              <div>
+                <label className="block text-[10px] font-black text-slate-400 mb-2 uppercase tracking-widest">Pekerjaan</label>
+                <select name="job" value={formData.job} onChange={handleChange} className={inputClass}>
+                  {JOB_OPTIONS.map(opt => <option key={opt} value={opt} className="dark:bg-slate-800">{opt}</option>)}
                 </select>
               </div>
             </div>
@@ -166,13 +180,13 @@ const EditResidentModal: React.FC<EditResidentModalProps> = ({ resident, onClose
           {/* Pregnancy Section */}
           {isFemale && (
             <div className="space-y-6">
-              <h4 className="text-xs font-black text-pink-600 uppercase tracking-[0.2em] border-b border-pink-100 pb-2 flex items-center">
+              <h4 className="text-xs font-black text-pink-600 dark:text-pink-400 uppercase tracking-[0.2em] border-b border-pink-100 dark:border-pink-900/30 pb-2 flex items-center">
                 <HeartPulse size={14} className="mr-2" /> IV. Status Kehamilan
               </h4>
-              <div className="bg-pink-50/50 p-6 rounded-[2rem] border border-pink-100">
+              <div className="bg-pink-50/50 dark:bg-pink-900/10 p-6 rounded-[2rem] border border-pink-100 dark:border-pink-900/30">
                 <div className="flex items-center justify-between mb-6">
                   <div>
-                    <p className="text-[11px] font-black text-pink-700 uppercase">Apakah Sedang Hamil?</p>
+                    <p className="text-[11px] font-black text-pink-700 dark:text-pink-400 uppercase">Apakah Sedang Hamil?</p>
                     <p className="text-[9px] text-slate-400 font-bold uppercase mt-1">Aktifkan jika penduduk terdeteksi hamil untuk monitoring KIA</p>
                   </div>
                   <label className="relative inline-flex items-center cursor-pointer">
@@ -183,26 +197,26 @@ const EditResidentModal: React.FC<EditResidentModalProps> = ({ resident, onClose
                       onChange={handleChange} 
                       className="sr-only peer" 
                     />
-                    <div className="w-14 h-7 bg-slate-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-6 after:w-6 after:transition-all peer-checked:bg-pink-500"></div>
+                    <div className="w-14 h-7 bg-slate-200 dark:bg-slate-700 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-6 after:w-6 after:transition-all peer-checked:bg-pink-500"></div>
                   </label>
                 </div>
                 
                 {formData.isPregnant && (
                   <div className="space-y-6 animate-in slide-in-from-top-4 duration-300">
                     <div>
-                      <label className="block text-[10px] font-black text-pink-700 mb-2 uppercase tracking-widest">Tanggal Mulai Hamil / HPHT</label>
+                      <label className="block text-[10px] font-black text-pink-700 dark:text-pink-400 mb-2 uppercase tracking-widest">Tanggal Mulai Hamil / HPHT</label>
                       <input 
                         type="date" 
                         name="pregnancyStartDate" 
                         value={formData.pregnancyStartDate || ''} 
                         onChange={handleChange} 
-                        className="w-full bg-white border border-pink-200 rounded-2xl px-4 py-3 text-sm font-bold outline-none focus:ring-4 focus:ring-pink-500/10" 
+                        className={`${inputClass} border-pink-200 dark:border-pink-900/50 focus:ring-pink-500/10`} 
                         required={formData.isPregnant}
                       />
                     </div>
 
                     <div className="space-y-3">
-                      <label className="block text-[10px] font-black text-pink-700 mb-1 uppercase tracking-widest">Klasifikasi Resiko (KIA)</label>
+                      <label className="block text-[10px] font-black text-pink-700 dark:text-pink-400 mb-1 uppercase tracking-widest">Klasifikasi Resiko (KIA)</label>
                       <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
                         <button 
                           type="button" 
@@ -210,7 +224,7 @@ const EditResidentModal: React.FC<EditResidentModalProps> = ({ resident, onClose
                           className={`p-4 rounded-2xl border transition-all text-left flex flex-col space-y-1 ${
                             formData.pregnancyRisk === 'Tinggi' 
                               ? 'bg-rose-500 border-rose-600 text-white shadow-lg' 
-                              : 'bg-white border-slate-200 text-slate-400 hover:border-rose-200'
+                              : 'bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700 text-slate-400 hover:border-rose-200'
                           }`}
                         >
                           <div className="flex items-center justify-between">
@@ -227,7 +241,7 @@ const EditResidentModal: React.FC<EditResidentModalProps> = ({ resident, onClose
                           className={`p-4 rounded-2xl border transition-all text-left flex flex-col space-y-1 ${
                             formData.pregnancyRisk === 'Sedang' 
                               ? 'bg-amber-400 border-amber-500 text-slate-900 shadow-lg' 
-                              : 'bg-white border-slate-200 text-slate-400 hover:border-amber-200'
+                              : 'bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700 text-slate-400 hover:border-amber-200'
                           }`}
                         >
                           <div className="flex items-center justify-between">
@@ -244,7 +258,7 @@ const EditResidentModal: React.FC<EditResidentModalProps> = ({ resident, onClose
                           className={`p-4 rounded-2xl border transition-all text-left flex flex-col space-y-1 ${
                             formData.pregnancyRisk === 'Rendah' 
                               ? 'bg-emerald-500 border-emerald-600 text-white shadow-lg' 
-                              : 'bg-white border-slate-200 text-slate-400 hover:border-emerald-200'
+                              : 'bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700 text-slate-400 hover:border-emerald-200'
                           }`}
                         >
                           <div className="flex items-center justify-between">
@@ -263,9 +277,9 @@ const EditResidentModal: React.FC<EditResidentModalProps> = ({ resident, onClose
           )}
         </form>
 
-        <div className="p-8 border-t border-slate-200 bg-slate-50 flex justify-end space-x-4">
-          <button type="button" onClick={onClose} className="px-8 py-3 bg-white border border-slate-200 rounded-2xl text-xs font-black text-slate-400 hover:text-slate-600 transition-all uppercase tracking-widest">Batal</button>
-          <button type="submit" form="editForm" className="px-10 py-3 bg-slate-900 text-white rounded-2xl text-xs font-black hover:bg-slate-800 shadow-xl transition-all flex items-center space-x-3">
+        <div className="p-8 border-t border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900 flex justify-end space-x-4">
+          <button type="button" onClick={onClose} className="px-8 py-3 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl text-xs font-black text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 transition-all uppercase tracking-widest">Batal</button>
+          <button type="submit" form="editForm" className="px-10 py-3 bg-slate-900 dark:bg-blue-600 text-white rounded-2xl text-xs font-black hover:bg-slate-800 dark:hover:bg-blue-500 shadow-xl transition-all flex items-center space-x-3">
             <Save size={18} />
             <span>Simpan Perubahan</span>
           </button>
