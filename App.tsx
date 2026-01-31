@@ -15,9 +15,16 @@ import { initializeApp, getApp, getApps } from 'firebase/app';
 import { getFirestore, doc, setDoc, onSnapshot } from 'firebase/firestore';
 
 const App: React.FC = () => {
+  // Ambil data awal dari localStorage saja, JANGAN pakai initialResidents jika ada cache
   const [residents, setResidents] = useState<Resident[]>(() => {
     const saved = localStorage.getItem('siga_residents');
-    return saved ? JSON.parse(saved) : initialResidents;
+    if (saved) {
+      try {
+        const parsed = JSON.parse(saved);
+        return Array.isArray(parsed) ? parsed : [];
+      } catch (e) { return []; }
+    }
+    return [];
   });
 
   const [config, setConfig] = useState<AppConfig>(() => {
@@ -36,25 +43,22 @@ const App: React.FC = () => {
   const [activeTab, setActiveTab] = useState('dashboard');
   const [isSyncing, setIsSyncing] = useState(false);
   
-  // Refs untuk manajemen alur data yang presisi
-  const isInitialLoadDone = useRef(false);
-  const isWritingToCloud = useRef(false);
-  const lastKnownCloudTimestamp = useRef<string | null>(null);
+  // GUARD: Kunci utama agar tidak terjadi "Wiping"
+  const isHydrated = useRef(false); // Menandai sudah sukses tarik data awal dari Cloud
+  const isInternalUpdate = useRef(false); // Menandai perubahan state berasal dari Cloud listener
+  const lastUpdateToken = useRef<string | null>(null);
 
-  // Sync Theme dengan HTML Root
+  // Sync Theme
   useEffect(() => {
     const root = window.document.documentElement;
-    if (config.theme === 'dark') {
-      root.classList.add('dark');
-    } else {
-      root.classList.remove('dark');
-    }
+    if (config.theme === 'dark') root.classList.add('dark');
+    else root.classList.remove('dark');
   }, [config.theme]);
 
-  // 1. Setup Firebase Listener (DOWNLOAD)
+  // 1. Firebase Listener (DOWNLOAD)
   useEffect(() => {
     if (!config.firebaseConfig?.enabled || !config.firebaseConfig.projectId) {
-      isInitialLoadDone.current = true;
+      isHydrated.current = true; // Mode lokal, langsung anggap siap
       return;
     }
 
@@ -66,32 +70,32 @@ const App: React.FC = () => {
       const db = getFirestore(firebaseApp);
       
       unsubRes = onSnapshot(doc(db, "ngumbul_data", "residents_master"), (snap) => {
-        // JANGAN TIMPA jika kita sedang dalam proses menulis atau data berasal dari internal cache (pending writes)
-        if (snap.metadata.hasPendingWrites || isWritingToCloud.current) return;
+        // Jika data ini berasal dari upload kita sendiri (metadata pending), abaikan
+        if (snap.metadata.hasPendingWrites) return;
 
         if (snap.exists()) {
-          const data = snap.data();
-          // Validasi apakah data di cloud memang lebih baru atau berbeda dari yang kita tahu
-          if (data.lastUpdated !== lastKnownCloudTimestamp.current) {
-            lastKnownCloudTimestamp.current = data.lastUpdated;
-            const cloudList = data.list || [];
+          const cloudData = snap.data();
+          if (cloudData.lastUpdated !== lastUpdateToken.current) {
+            lastUpdateToken.current = cloudData.lastUpdated;
             
-            // Update state hanya jika ada perbedaan data (mencegah loop)
-            setResidents(cloudList);
-            localStorage.setItem('siga_residents', JSON.stringify(cloudList));
+            // Tandai ini update internal agar useEffect upload tidak terpicu
+            isInternalUpdate.current = true;
+            setResidents(cloudData.list || []);
+            localStorage.setItem('siga_residents', JSON.stringify(cloudData.list || []));
           }
         } else {
-          // Jika dokumen belum ada di cloud, kita tandai load selesai agar bisa upload data lokal yang ada
-          console.log("Cloud storage empty, ready for first upload.");
+          console.log("Cloud masih kosong. Menunggu upload pertama...");
         }
-        isInitialLoadDone.current = true;
+        
+        // Tandai bursa data sudah sinkron, kunci upload dibuka
+        isHydrated.current = true;
       }, (err) => {
-        console.error("Firebase Sync Error:", err);
-        isInitialLoadDone.current = true;
+        console.error("Cloud Listener Error:", err);
+        isHydrated.current = true;
       });
 
       unsubConf = onSnapshot(doc(db, "ngumbul_data", "app_config"), (snap) => {
-        if (snap.metadata.hasPendingWrites || isWritingToCloud.current) return;
+        if (snap.metadata.hasPendingWrites) return;
         if (snap.exists()) {
           const data = snap.data();
           setConfig(prev => {
@@ -103,56 +107,53 @@ const App: React.FC = () => {
       });
 
     } catch (e) {
-      console.error("Firebase Connection Error:", e);
-      isInitialLoadDone.current = true;
+      console.error("Firebase Init Error:", e);
+      isHydrated.current = true;
     }
 
     return () => { unsubRes(); unsubConf(); };
   }, [config.firebaseConfig?.enabled, config.firebaseConfig?.projectId]);
 
-  // 2. Upload Data ke Cloud (UPLOAD)
+  // 2. Firebase Sync (UPLOAD)
   useEffect(() => {
-    // Simpan ke lokal selalu
+    // Simpan ke lokal selalu sebagai backup tercepat
     localStorage.setItem('siga_residents', JSON.stringify(residents));
-    
-    // GUARD: Cegah upload jika load awal belum selesai atau Firebase tidak aktif
-    if (!isInitialLoadDone.current || !config.firebaseConfig?.enabled || !config.firebaseConfig.projectId) return;
 
-    const timer = setTimeout(async () => {
-      setIsSyncing(true);
-      isWritingToCloud.current = true; // Kunci listener download
+    // PROTEKSI 1: Jika belum selesai tarik data awal, JANGAN upload (mencegah timpa 0)
+    if (!isHydrated.current) return;
 
-      try {
-        const db = getFirestore(getApp());
-        const ts = new Date().toISOString();
-        
-        // Catat timestamp yang akan kita kirim agar listener tahu ini data kita
-        lastKnownCloudTimestamp.current = ts;
+    // PROTEKSI 2: Jika perubahan state berasal dari download (onSnapshot), JANGAN upload balik
+    if (isInternalUpdate.current) {
+      isInternalUpdate.current = false;
+      return;
+    }
 
-        await setDoc(doc(db, "ngumbul_data", "residents_master"), { 
-          list: residents,
-          lastUpdated: ts
-        });
-        
-        console.log("Cloud sync successful at", ts);
-      } catch (e) { 
-        console.error("Upload failed:", e); 
-      } finally {
-        // Berikan jeda kecil sebelum membuka kunci agar metadata snap sempat diproses
-        setTimeout(() => {
-          isWritingToCloud.current = false;
+    if (config.firebaseConfig?.enabled && config.firebaseConfig.projectId) {
+      const timer = setTimeout(async () => {
+        setIsSyncing(true);
+        try {
+          const db = getFirestore(getApp());
+          const now = new Date().toISOString();
+          lastUpdateToken.current = now;
+          
+          await setDoc(doc(db, "ngumbul_data", "residents_master"), { 
+            list: residents,
+            lastUpdated: now
+          });
+          console.log("Berhasil Sinkron ke Cloud:", residents.length, "jiwa");
+        } catch (e) {
+          console.error("Gagal Sinkron ke Cloud:", e);
+        } finally {
           setIsSyncing(false);
-        }, 1000);
-      }
-    }, 2000); // Debounce 2 detik (sangat penting untuk import massal)
-
-    return () => clearTimeout(timer);
+        }
+      }, 2500); // Debounce lebih lama (2.5 detik) agar stabil setelah import massal
+      return () => clearTimeout(timer);
+    }
   }, [residents]);
 
-  // 3. Upload Config (Hanya parameter publik)
+  // 3. Sync Config
   useEffect(() => {
-    if (!isInitialLoadDone.current || !config.firebaseConfig?.enabled || !config.firebaseConfig.projectId) return;
-    
+    if (!isHydrated.current || !config.firebaseConfig?.enabled) return;
     const timer = setTimeout(async () => {
       try {
         const db = getFirestore(getApp());
@@ -161,8 +162,8 @@ const App: React.FC = () => {
           ...publicConfig,
           lastUpdated: new Date().toISOString()
         });
-      } catch (e) { console.error(e); }
-    }, 1500);
+      } catch (e) {}
+    }, 1000);
     return () => clearTimeout(timer);
   }, [config]);
 
