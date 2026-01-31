@@ -1,6 +1,6 @@
 
 import React, { useState, useEffect } from 'react';
-import { Save, Globe, RefreshCcw, User, Shield, Image as ImageIcon, Cloud, Database, Wifi, WifiOff, UploadCloud, DownloadCloud, LogOut, Key } from 'lucide-react';
+import { Save, Globe, RefreshCcw, User, Shield, Image as ImageIcon, Cloud, Database, Wifi, WifiOff, UploadCloud, DownloadCloud, LogOut, Key, CheckCircle2 } from 'lucide-react';
 import { AppConfig } from '../types';
 import { User as FirebaseUser } from 'firebase/auth';
 
@@ -16,16 +16,22 @@ interface AppSettingsProps {
 const AppSettings: React.FC<AppSettingsProps> = ({ config, setConfig, onForcePush, onForcePull, user, onLogout }) => {
   const [formData, setFormData] = useState<AppConfig>(config);
   const [isSaved, setIsSaved] = useState(false);
+  const [isApplying, setIsApplying] = useState(false);
 
   useEffect(() => {
     setFormData(config);
   }, [config]);
 
-  const handleSave = (e: React.FormEvent) => {
-    e.preventDefault();
+  const handleSave = (e?: React.FormEvent) => {
+    if (e) e.preventDefault();
+    setIsApplying(true);
     setConfig(formData);
-    setIsSaved(true);
-    setTimeout(() => setIsSaved(false), 3000);
+    
+    setTimeout(() => {
+      setIsApplying(false);
+      setIsSaved(true);
+      setTimeout(() => setIsSaved(false), 2000);
+    }, 800);
   };
 
   const updateFirebase = (field: string, value: any) => {
@@ -58,21 +64,21 @@ const AppSettings: React.FC<AppSettingsProps> = ({ config, setConfig, onForcePus
           <div className="space-y-4">
             <div>
               <label className="text-[9px] font-black text-slate-400 uppercase tracking-widest block mb-1.5">Nama Aplikasi</label>
-              <input type="text" className="w-full bg-slate-50 dark:bg-slate-800 dark:text-white border border-slate-200 dark:border-slate-700 rounded-xl px-4 py-3 font-black text-xs uppercase" value={formData.appName} onChange={(e) => setFormData({...formData, appName: e.target.value})} />
+              <input type="text" className="w-full bg-slate-50 dark:bg-slate-800 dark:text-white border border-slate-200 dark:border-slate-700 rounded-xl px-4 py-3 font-black text-xs uppercase outline-none focus:ring-2 focus:ring-blue-500/20" value={formData.appName} onChange={(e) => setFormData({...formData, appName: e.target.value})} />
             </div>
             <div>
               <label className="text-[9px] font-black text-slate-400 uppercase tracking-widest block mb-1.5">Nama Kepala Desa (TTD PDF)</label>
-              <input type="text" className="w-full bg-slate-50 dark:bg-slate-800 dark:text-white border border-slate-200 dark:border-slate-700 rounded-xl px-4 py-3 font-black text-xs uppercase" value={formData.villageHeadName} onChange={(e) => setFormData({...formData, villageHeadName: e.target.value})} />
+              <input type="text" className="w-full bg-slate-50 dark:bg-slate-800 dark:text-white border border-slate-200 dark:border-slate-700 rounded-xl px-4 py-3 font-black text-xs uppercase outline-none focus:ring-2 focus:ring-blue-500/20" value={formData.villageHeadName} onChange={(e) => setFormData({...formData, villageHeadName: e.target.value})} />
             </div>
             <div>
               <label className="text-[9px] font-black text-slate-400 uppercase tracking-widest block mb-1.5">Nama Operator</label>
-              <input type="text" className="w-full bg-slate-50 dark:bg-slate-800 dark:text-white border border-slate-200 dark:border-slate-700 rounded-xl px-4 py-3 font-black text-xs uppercase" value={formData.operatorName} onChange={(e) => setFormData({...formData, operatorName: e.target.value})} />
+              <input type="text" className="w-full bg-slate-50 dark:bg-slate-800 dark:text-white border border-slate-200 dark:border-slate-700 rounded-xl px-4 py-3 font-black text-xs uppercase outline-none focus:ring-2 focus:ring-blue-500/20" value={formData.operatorName} onChange={(e) => setFormData({...formData, operatorName: e.target.value})} />
             </div>
           </div>
 
-          <button type="submit" className="w-full py-4 bg-slate-900 dark:bg-blue-600 text-white rounded-2xl text-[10px] font-black uppercase tracking-widest shadow-xl flex items-center justify-center space-x-2 transition-all hover:bg-blue-600">
-            <Save size={16} />
-            <span>Simpan Perubahan</span>
+          <button type="submit" className={`w-full py-4 rounded-2xl text-[10px] font-black uppercase tracking-widest shadow-xl flex items-center justify-center space-x-2 transition-all ${isSaved ? 'bg-emerald-500 text-white' : 'bg-slate-900 dark:bg-blue-600 text-white hover:bg-blue-600'}`}>
+            {isSaved ? <CheckCircle2 size={16} /> : <Save size={16} />}
+            <span>{isSaved ? 'Berhasil Disimpan' : 'Simpan Perubahan'}</span>
           </button>
 
           {user && (
@@ -126,11 +132,11 @@ const AppSettings: React.FC<AppSettingsProps> = ({ config, setConfig, onForcePus
            )}
 
            <div className="grid grid-cols-2 gap-3 mb-4">
-              <button onClick={onForcePush} disabled={!user} className="flex flex-col items-center justify-center p-4 bg-white/5 border border-white/10 rounded-2xl hover:bg-white/10 transition-all group disabled:opacity-20">
+              <button onClick={onForcePush} disabled={!user} className="flex flex-col items-center justify-center p-4 bg-white/5 border border-white/10 rounded-2xl hover:bg-white/10 transition-all group disabled:opacity-20 disabled:cursor-not-allowed">
                  <UploadCloud size={24} className="text-blue-400 mb-2 group-hover:scale-110 transition-transform" />
                  <span className="text-[8px] font-black uppercase tracking-widest">Unggah Paksa</span>
               </button>
-              <button onClick={onForcePull} disabled={!user} className="flex flex-col items-center justify-center p-4 bg-white/5 border border-white/10 rounded-2xl hover:bg-white/10 transition-all group disabled:opacity-20">
+              <button onClick={onForcePull} disabled={!user} className="flex flex-col items-center justify-center p-4 bg-white/5 border border-white/10 rounded-2xl hover:bg-white/10 transition-all group disabled:opacity-20 disabled:cursor-not-allowed">
                  <DownloadCloud size={24} className="text-emerald-400 mb-2 group-hover:scale-110 transition-transform" />
                  <span className="text-[8px] font-black uppercase tracking-widest">Ambil Paksa</span>
               </button>
@@ -139,18 +145,26 @@ const AppSettings: React.FC<AppSettingsProps> = ({ config, setConfig, onForcePus
            <div className="space-y-4">
               <div>
                 <label className="text-[8px] font-black text-slate-500 uppercase tracking-widest block mb-1">Project ID</label>
-                <input type="text" className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-2.5 text-xs font-mono focus:bg-white/10 outline-none" value={formData.firebaseConfig?.projectId || ''} onChange={(e) => updateFirebase('projectId', e.target.value)} />
+                <input type="text" className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-2.5 text-xs font-mono focus:bg-white/10 outline-none" value={formData.firebaseConfig?.projectId || ''} onChange={(e) => updateFirebase('projectId', e.target.value)} placeholder="siga-ngumbul-xxxxx" />
               </div>
               <div>
                 <label className="text-[8px] font-black text-slate-500 uppercase tracking-widest block mb-1">API Key</label>
-                <input type="password" name="apiKey" className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-2.5 text-xs font-mono focus:bg-white/10 outline-none" value={formData.firebaseConfig?.apiKey || ''} onChange={(e) => updateFirebase('apiKey', e.target.value)} />
+                <input type="password" name="apiKey" className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-2.5 text-xs font-mono focus:bg-white/10 outline-none" value={formData.firebaseConfig?.apiKey || ''} onChange={(e) => updateFirebase('apiKey', e.target.value)} placeholder="AIzaSy..." />
               </div>
            </div>
 
-           <button onClick={handleSave} className="w-full py-4 bg-blue-600 text-white rounded-2xl text-[10px] font-black uppercase tracking-widest shadow-xl transition-all flex items-center justify-center space-x-2">
-             <RefreshCcw size={16} />
-             <span>Terapkan Konfigurasi</span>
+           <button 
+             onClick={() => handleSave()} 
+             className={`w-full py-4 rounded-2xl text-[10px] font-black uppercase tracking-widest shadow-xl transition-all flex items-center justify-center space-x-2 ${isApplying ? 'bg-slate-700' : 'bg-blue-600 hover:bg-blue-500'}`}
+             disabled={isApplying}
+           >
+             {isApplying ? <RefreshCcw size={16} className="animate-spin" /> : <RefreshCcw size={16} />}
+             <span>{isApplying ? 'Menerapkan...' : 'Terapkan Konfigurasi'}</span>
            </button>
+           
+           <p className="text-[8px] text-slate-500 text-center font-bold uppercase tracking-widest leading-relaxed">
+             Pastikan Auth Domain & Project ID Benar Agar Sinkronisasi Berjalan.
+           </p>
         </div>
       </div>
     </div>

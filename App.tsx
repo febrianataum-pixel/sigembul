@@ -12,7 +12,7 @@ import AdvancedSearch from './components/AdvancedSearch';
 import Login from './components/Login';
 import { Resident, AppConfig } from './types';
 import { initializeApp, getApp, getApps } from 'firebase/app';
-import { getFirestore, doc, setDoc, getDoc, onSnapshot } from 'firebase/firestore';
+import { getFirestore, collection, doc, writeBatch, getDocs, onSnapshot, query, limit } from 'firebase/firestore';
 import { getAuth, onAuthStateChanged, User, signOut } from 'firebase/auth';
 
 const App: React.FC = () => {
@@ -41,38 +41,38 @@ const App: React.FC = () => {
   
   const isHydrated = useRef(false); 
   const isInternalUpdate = useRef(false);
-  const lastUpdateToken = useRef<string | null>(null);
+  const syncTimeoutRef = useRef<any>(null);
 
-  // Sync Theme
+  // 0. Simpan Config ke LocalStorage
   useEffect(() => {
+    localStorage.setItem('siga_config', JSON.stringify(config));
     const root = window.document.documentElement;
     if (config.theme === 'dark') root.classList.add('dark');
     else root.classList.remove('dark');
-  }, [config.theme]);
+  }, [config]);
 
   // 1. Firebase Auth Listener
   useEffect(() => {
     if (!config.firebaseConfig?.enabled || !config.firebaseConfig.projectId) {
       setAuthLoading(false);
+      setUser(null);
       return;
     }
 
     try {
       const firebaseApp = getApps().length === 0 ? initializeApp(config.firebaseConfig) : getApp();
       const auth = getAuth(firebaseApp);
-      
       const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
         setUser(currentUser);
         setAuthLoading(false);
       });
-      
       return () => unsubscribe();
     } catch (e) {
       setAuthLoading(false);
     }
   }, [config.firebaseConfig?.enabled, config.firebaseConfig?.projectId]);
 
-  // 2. Firebase Database Listener (Hanya jika Login)
+  // 2. Firebase Realtime Listener (COLLECTION MODE)
   useEffect(() => {
     if (!config.firebaseConfig?.enabled || !config.firebaseConfig.projectId || !user) {
       isHydrated.current = true;
@@ -82,17 +82,22 @@ const App: React.FC = () => {
     let unsubRes = () => {};
     try {
       const db = getFirestore(getApp());
-      unsubRes = onSnapshot(doc(db, "ngumbul_data", "residents_master"), (snap) => {
+      // Kita mendengarkan perubahan pada seluruh koleksi "residents_db"
+      unsubRes = onSnapshot(collection(db, "residents_db"), (snap) => {
+        // Jangan update jika perubahan berasal dari diri sendiri (pending writes)
         if (snap.metadata.hasPendingWrites) return;
-        if (snap.exists()) {
-          const cloudData = snap.data();
-          if (cloudData.lastUpdated !== lastUpdateToken.current) {
-            lastUpdateToken.current = cloudData.lastUpdated;
-            const cloudList = cloudData.list || [];
-            isInternalUpdate.current = true;
-            setResidents(cloudList);
-            localStorage.setItem('siga_residents', JSON.stringify(cloudList));
-          }
+
+        // Jika ada perubahan di Cloud, ambil semua data terbaru
+        const cloudList: Resident[] = [];
+        snap.forEach((doc) => {
+          cloudList.push(doc.data() as Resident);
+        });
+
+        // Pengamanan: Hanya timpa jika cloud tidak kosong atau ini sinkronisasi pertama
+        if (cloudList.length > 0 || residents.length === 0) {
+          isInternalUpdate.current = true;
+          setResidents(cloudList);
+          localStorage.setItem('siga_residents', JSON.stringify(cloudList));
         }
         isHydrated.current = true;
       }, (err) => {
@@ -105,65 +110,69 @@ const App: React.FC = () => {
     return () => unsubRes();
   }, [user, config.firebaseConfig?.enabled]);
 
-  // 3. Firebase Sync (UPLOAD - Hanya jika Login)
+  // 3. Auto-Save to LocalStorage
   useEffect(() => {
     localStorage.setItem('siga_residents', JSON.stringify(residents));
-
-    if (!isHydrated.current || !user) return;
-    if (isInternalUpdate.current) {
-      isInternalUpdate.current = false;
-      return;
-    }
-
-    if (config.firebaseConfig?.enabled && config.firebaseConfig.projectId) {
-      if (residents.length === 0 && !lastUpdateToken.current) return;
-
-      const timer = setTimeout(async () => {
-        setIsSyncing(true);
-        try {
-          const db = getFirestore(getApp());
-          const now = new Date().toISOString();
-          lastUpdateToken.current = now;
-          await setDoc(doc(db, "ngumbul_data", "residents_master"), { 
-            list: residents,
-            lastUpdated: now
-          });
-        } catch (e) {
-          console.error(e);
-        } finally {
-          setIsSyncing(false);
-        }
-      }, 3000); 
-      return () => clearTimeout(timer);
-    }
-  }, [residents, user]);
+  }, [residents]);
 
   const forcePush = async () => {
-    if (!config.firebaseConfig?.enabled || !user) return;
+    if (!config.firebaseConfig?.enabled || !user) return alert("Firebase belum aktif atau belum login.");
     setIsSyncing(true);
     try {
       const db = getFirestore(getApp());
-      const now = new Date().toISOString();
-      lastUpdateToken.current = now;
-      await setDoc(doc(db, "ngumbul_data", "residents_master"), { list: residents, lastUpdated: now });
-      alert("Berhasil mengunggah data lokal ke Cloud.");
-    } catch (e) { alert("Gagal unggah: " + e); }
-    finally { setIsSyncing(false); }
+      
+      // Menggunakan BATCH (Maksimal 500 per kiriman)
+      let batch = writeBatch(db);
+      let count = 0;
+      
+      for (const res of residents) {
+        const docRef = doc(db, "residents_db", res.id);
+        batch.set(docRef, res);
+        count++;
+        
+        // Jika sudah 500, kirim dulu lalu buat batch baru
+        if (count % 500 === 0) {
+          await batch.commit();
+          batch = writeBatch(db);
+        }
+      }
+      
+      // Kirim sisanya
+      if (count % 500 !== 0) {
+        await batch.commit();
+      }
+
+      alert(`Berhasil mengunggah ${count} data penduduk ke Cloud.`);
+    } catch (e: any) { 
+      alert("Gagal unggah: " + e.message); 
+    } finally { 
+      setIsSyncing(false); 
+    }
   };
 
   const forcePull = async () => {
-    if (!config.firebaseConfig?.enabled || !user) return;
+    if (!config.firebaseConfig?.enabled || !user) return alert("Firebase belum aktif atau belum login.");
     setIsSyncing(true);
     try {
       const db = getFirestore(getApp());
-      const snap = await getDoc(doc(db, "ngumbul_data", "residents_master"));
-      if (snap.exists()) {
-        const data = snap.data();
-        setResidents(data.list || []);
-        alert("Berhasil mengambil data dari Cloud.");
-      } else { alert("Data di Cloud kosong."); }
-    } catch (e) { alert("Gagal ambil data: " + e); }
-    finally { setIsSyncing(false); }
+      const querySnapshot = await getDocs(collection(db, "residents_db"));
+      const cloudList: Resident[] = [];
+      querySnapshot.forEach((doc) => {
+        cloudList.push(doc.data() as Resident);
+      });
+
+      if (cloudList.length > 0) {
+        setResidents(cloudList);
+        localStorage.setItem('siga_residents', JSON.stringify(cloudList));
+        alert(`Berhasil mengambil ${cloudList.length} data dari Cloud.`);
+      } else { 
+        alert("Data di Cloud masih kosong."); 
+      }
+    } catch (e: any) { 
+      alert("Gagal ambil data: " + e.message); 
+    } finally { 
+      setIsSyncing(false); 
+    }
   };
 
   const handleLogout = async () => {
@@ -187,7 +196,6 @@ const App: React.FC = () => {
     );
   }
 
-  // Cek apakah butuh login
   if (config.firebaseConfig?.enabled && !user) {
     return <Login config={config} />;
   }
