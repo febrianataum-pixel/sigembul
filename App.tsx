@@ -83,7 +83,6 @@ const App: React.FC = () => {
     try {
       const db = getFirestore(getApp());
       unsubRes = onSnapshot(collection(db, "residents_db"), (snap) => {
-        // Abaikan jika perubahan berasal dari aplikasi ini sendiri (local optimism)
         if (snap.metadata.hasPendingWrites) return;
 
         setResidents(prev => {
@@ -96,7 +95,6 @@ const App: React.FC = () => {
 
             if (change.type === 'added' || change.type === 'modified') {
               if (idx > -1) {
-                // Bandingkan untuk menghindari re-render yang tidak perlu
                 if (JSON.stringify(next[idx]) !== JSON.stringify(cloudData)) {
                   next[idx] = cloudData;
                   hasChanged = true;
@@ -115,7 +113,6 @@ const App: React.FC = () => {
 
           if (hasChanged) {
             isInternalUpdate.current = true;
-            // Update ref agar tidak memicu auto-sync balik ke cloud
             prevResidentsRef.current = next;
             localStorage.setItem('siga_residents', JSON.stringify(next));
             return next;
@@ -130,26 +127,21 @@ const App: React.FC = () => {
     return () => unsubRes();
   }, [user, config.firebaseConfig?.enabled]);
 
-  // 3. AUTO-SYNC: Kirim perubahan individu ke Cloud secara otomatis
+  // 3. AUTO-SYNC
   useEffect(() => {
-    // Selalu simpan ke LocalStorage agar aman jika tab tertutup
     localStorage.setItem('siga_residents', JSON.stringify(residents));
-
-    // Jika perubahan datang dari Cloud (onSnapshot), jangan kirim balik
     if (isInternalUpdate.current) {
       isInternalUpdate.current = false;
       return;
     }
 
-    // Hanya jalan jika Firebase aktif dan User sudah Login
     if (config.firebaseConfig?.enabled && user) {
-      // Cari data mana yang berubah dibandingkan data sebelumnya
       const changedResidents = residents.filter(curr => {
         const prev = prevResidentsRef.current.find(p => p.id === curr.id);
         return !prev || JSON.stringify(prev) !== JSON.stringify(curr);
       });
 
-      if (changedResidents.length > 0 && changedResidents.length < 50) { // Limit 50 agar tidak membebani saat import besar
+      if (changedResidents.length > 0 && changedResidents.length < 50) {
         const db = getFirestore(getApp());
         changedResidents.forEach(async (res) => {
           try {
@@ -160,8 +152,6 @@ const App: React.FC = () => {
         });
       }
     }
-    
-    // Perbarui ref untuk perbandingan selanjutnya
     prevResidentsRef.current = residents;
   }, [residents, user, config.firebaseConfig?.enabled]);
 
@@ -172,7 +162,6 @@ const App: React.FC = () => {
       const db = getFirestore(getApp());
       let batch = writeBatch(db);
       let count = 0;
-      
       for (const res of residents) {
         const docRef = doc(db, "residents_db", res.id);
         batch.set(docRef, res);
@@ -201,7 +190,6 @@ const App: React.FC = () => {
       querySnapshot.forEach((doc) => {
         cloudList.push(doc.data() as Resident);
       });
-
       if (cloudList.length > 0) {
         isInternalUpdate.current = true;
         setResidents(cloudList);
@@ -227,20 +215,15 @@ const App: React.FC = () => {
     }
   };
 
-  if (authLoading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-slate-50 dark:bg-slate-950">
-        <div className="animate-pulse flex flex-col items-center">
-          <div className="w-16 h-16 bg-blue-600 rounded-2xl mb-4"></div>
-          <div className="h-4 w-32 bg-slate-200 dark:bg-slate-800 rounded"></div>
-        </div>
-      </div>
-    );
-  }
+  // Skip rendering auth loading screen to make access immediate
+  // if (authLoading) { ... }
 
+  // LOGIN SCREEN TEMPORARILY HIDDEN BY REQUEST
+  /*
   if (config.firebaseConfig?.enabled && !user) {
     return <Login config={config} />;
   }
+  */
 
   const renderContent = () => {
     const activeResidents = residents.filter(r => r.status === 'Aktif');
