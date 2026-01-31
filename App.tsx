@@ -12,19 +12,12 @@ import AdvancedSearch from './components/AdvancedSearch';
 import { Resident, AppConfig } from './types';
 import { initialResidents } from './mockData';
 import { initializeApp, getApp, getApps } from 'firebase/app';
-import { getFirestore, doc, setDoc, onSnapshot } from 'firebase/firestore';
+import { getFirestore, doc, setDoc, getDoc, onSnapshot } from 'firebase/firestore';
 
 const App: React.FC = () => {
-  // Ambil data awal dari localStorage saja, JANGAN pakai initialResidents jika ada cache
   const [residents, setResidents] = useState<Resident[]>(() => {
     const saved = localStorage.getItem('siga_residents');
-    if (saved) {
-      try {
-        const parsed = JSON.parse(saved);
-        return Array.isArray(parsed) ? parsed : [];
-      } catch (e) { return []; }
-    }
-    return [];
+    return saved ? JSON.parse(saved) : [];
   });
 
   const [config, setConfig] = useState<AppConfig>(() => {
@@ -43,12 +36,10 @@ const App: React.FC = () => {
   const [activeTab, setActiveTab] = useState('dashboard');
   const [isSyncing, setIsSyncing] = useState(false);
   
-  // GUARD: Kunci utama agar tidak terjadi "Wiping"
-  const isHydrated = useRef(false); // Menandai sudah sukses tarik data awal dari Cloud
-  const isInternalUpdate = useRef(false); // Menandai perubahan state berasal dari Cloud listener
+  const isHydrated = useRef(false); 
+  const isInternalUpdate = useRef(false);
   const lastUpdateToken = useRef<string | null>(null);
 
-  // Sync Theme
   useEffect(() => {
     const root = window.document.documentElement;
     if (config.theme === 'dark') root.classList.add('dark');
@@ -58,114 +49,106 @@ const App: React.FC = () => {
   // 1. Firebase Listener (DOWNLOAD)
   useEffect(() => {
     if (!config.firebaseConfig?.enabled || !config.firebaseConfig.projectId) {
-      isHydrated.current = true; // Mode lokal, langsung anggap siap
+      isHydrated.current = true;
       return;
     }
 
     let unsubRes = () => {};
-    let unsubConf = () => {};
-
     try {
       const firebaseApp = getApps().length === 0 ? initializeApp(config.firebaseConfig) : getApp();
       const db = getFirestore(firebaseApp);
       
       unsubRes = onSnapshot(doc(db, "ngumbul_data", "residents_master"), (snap) => {
-        // Jika data ini berasal dari upload kita sendiri (metadata pending), abaikan
         if (snap.metadata.hasPendingWrites) return;
 
         if (snap.exists()) {
           const cloudData = snap.data();
+          // Jika data di cloud ada isinya, dan berbeda dengan lokal
           if (cloudData.lastUpdated !== lastUpdateToken.current) {
             lastUpdateToken.current = cloudData.lastUpdated;
+            const cloudList = cloudData.list || [];
             
-            // Tandai ini update internal agar useEffect upload tidak terpicu
+            // ANTI-WIPE: Hanya timpa lokal jika cloud benar-benar punya data atau memang kita mau kosongkan
+            // Tapi jika cloud kosong dan lokal ada isinya (kasus browser baru), 
+            // kita jangan set isHydrated dulu sampai kita putuskan siapa yang menang.
             isInternalUpdate.current = true;
-            setResidents(cloudData.list || []);
-            localStorage.setItem('siga_residents', JSON.stringify(cloudData.list || []));
+            setResidents(cloudList);
+            localStorage.setItem('siga_residents', JSON.stringify(cloudList));
           }
-        } else {
-          console.log("Cloud masih kosong. Menunggu upload pertama...");
         }
-        
-        // Tandai bursa data sudah sinkron, kunci upload dibuka
         isHydrated.current = true;
       }, (err) => {
-        console.error("Cloud Listener Error:", err);
+        console.error("Firebase Sync Error:", err);
         isHydrated.current = true;
       });
-
-      unsubConf = onSnapshot(doc(db, "ngumbul_data", "app_config"), (snap) => {
-        if (snap.metadata.hasPendingWrites) return;
-        if (snap.exists()) {
-          const data = snap.data();
-          setConfig(prev => {
-            const newConf = { ...prev, ...data, firebaseConfig: prev.firebaseConfig };
-            localStorage.setItem('siga_config', JSON.stringify(newConf));
-            return newConf;
-          });
-        }
-      });
-
     } catch (e) {
-      console.error("Firebase Init Error:", e);
       isHydrated.current = true;
     }
-
-    return () => { unsubRes(); unsubConf(); };
+    return () => unsubRes();
   }, [config.firebaseConfig?.enabled, config.firebaseConfig?.projectId]);
 
   // 2. Firebase Sync (UPLOAD)
   useEffect(() => {
-    // Simpan ke lokal selalu sebagai backup tercepat
     localStorage.setItem('siga_residents', JSON.stringify(residents));
 
-    // PROTEKSI 1: Jika belum selesai tarik data awal, JANGAN upload (mencegah timpa 0)
     if (!isHydrated.current) return;
-
-    // PROTEKSI 2: Jika perubahan state berasal dari download (onSnapshot), JANGAN upload balik
     if (isInternalUpdate.current) {
       isInternalUpdate.current = false;
       return;
     }
 
     if (config.firebaseConfig?.enabled && config.firebaseConfig.projectId) {
+      // JANGAN upload data kosong jika kita baru saja buka aplikasi (proteksi browser baru)
+      if (residents.length === 0 && !lastUpdateToken.current) return;
+
       const timer = setTimeout(async () => {
         setIsSyncing(true);
         try {
           const db = getFirestore(getApp());
           const now = new Date().toISOString();
           lastUpdateToken.current = now;
-          
           await setDoc(doc(db, "ngumbul_data", "residents_master"), { 
             list: residents,
             lastUpdated: now
           });
-          console.log("Berhasil Sinkron ke Cloud:", residents.length, "jiwa");
         } catch (e) {
-          console.error("Gagal Sinkron ke Cloud:", e);
+          console.error(e);
         } finally {
           setIsSyncing(false);
         }
-      }, 2500); // Debounce lebih lama (2.5 detik) agar stabil setelah import massal
+      }, 3000); 
       return () => clearTimeout(timer);
     }
   }, [residents]);
 
-  // 3. Sync Config
-  useEffect(() => {
-    if (!isHydrated.current || !config.firebaseConfig?.enabled) return;
-    const timer = setTimeout(async () => {
-      try {
-        const db = getFirestore(getApp());
-        const { firebaseConfig, ...publicConfig } = config;
-        await setDoc(doc(db, "ngumbul_data", "app_config"), { 
-          ...publicConfig,
-          lastUpdated: new Date().toISOString()
-        });
-      } catch (e) {}
-    }, 1000);
-    return () => clearTimeout(timer);
-  }, [config]);
+  // Manual Cloud Actions
+  const forcePush = async () => {
+    if (!config.firebaseConfig?.enabled) return;
+    setIsSyncing(true);
+    try {
+      const db = getFirestore(getApp());
+      const now = new Date().toISOString();
+      lastUpdateToken.current = now;
+      await setDoc(doc(db, "ngumbul_data", "residents_master"), { list: residents, lastUpdated: now });
+      alert("Berhasil mengunggah data lokal ke Cloud.");
+    } catch (e) { alert("Gagal unggah: " + e); }
+    finally { setIsSyncing(false); }
+  };
+
+  const forcePull = async () => {
+    if (!config.firebaseConfig?.enabled) return;
+    setIsSyncing(true);
+    try {
+      const db = getFirestore(getApp());
+      const snap = await getDoc(doc(db, "ngumbul_data", "residents_master"));
+      if (snap.exists()) {
+        const data = snap.data();
+        setResidents(data.list || []);
+        alert("Berhasil mengambil data dari Cloud.");
+      } else { alert("Data di Cloud kosong."); }
+    } catch (e) { alert("Gagal ambil data: " + e); }
+    finally { setIsSyncing(false); }
+  };
 
   const renderContent = () => {
     const activeResidents = residents.filter(r => r.status === 'Aktif');
@@ -177,19 +160,13 @@ const App: React.FC = () => {
       case 'kehamilan': return <PregnancyManagement residents={residents} setResidents={setResidents} />;
       case 'arsip': return <ArchivedResidents residents={residents} setResidents={setResidents} />;
       case 'rekap': return <RecapIndicators residents={activeResidents} config={config} />;
-      case 'profil': return <AppSettings config={config} setConfig={setConfig} />;
+      case 'profil': return <AppSettings config={config} setConfig={setConfig} onForcePush={forcePush} onForcePull={forcePull} />;
       default: return <Dashboard residents={activeResidents} />;
     }
   };
 
   return (
-    <Layout 
-      activeTab={activeTab} 
-      setActiveTab={setActiveTab} 
-      config={config} 
-      setConfig={setConfig}
-      isSyncing={isSyncing}
-    >
+    <Layout activeTab={activeTab} setActiveTab={setActiveTab} config={config} setConfig={setConfig} isSyncing={isSyncing}>
       {renderContent()}
     </Layout>
   );
