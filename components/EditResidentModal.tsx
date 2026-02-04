@@ -1,6 +1,6 @@
 
 import React, { useState } from 'react';
-import { X, Save, User, AlertCircle, HeartPulse, ShieldAlert, ShieldCheck, Stethoscope } from 'lucide-react';
+import { X, Save, User, AlertCircle, HeartPulse, ShieldAlert, ShieldCheck, Stethoscope, MessageSquare } from 'lucide-react';
 import { Resident, PregnancyRisk } from '../types';
 
 interface EditResidentModalProps {
@@ -203,16 +203,31 @@ const EditResidentModal: React.FC<EditResidentModalProps> = ({ resident, onClose
                 
                 {formData.isPregnant && (
                   <div className="space-y-6 animate-in slide-in-from-top-4 duration-300">
-                    <div>
-                      <label className="block text-[10px] font-black text-pink-700 dark:text-pink-400 mb-2 uppercase tracking-widest">Tanggal Mulai Hamil / HPHT</label>
-                      <input 
-                        type="date" 
-                        name="pregnancyStartDate" 
-                        value={formData.pregnancyStartDate || ''} 
-                        onChange={handleChange} 
-                        className={`${inputClass} border-pink-200 dark:border-pink-900/50 focus:ring-pink-500/10`} 
-                        required={formData.isPregnant}
-                      />
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div>
+                          <label className="block text-[10px] font-black text-pink-700 dark:text-pink-400 mb-2 uppercase tracking-widest">Tanggal Mulai Hamil / HPHT</label>
+                          <input 
+                            type="date" 
+                            name="pregnancyStartDate" 
+                            value={formData.pregnancyStartDate || ''} 
+                            onChange={handleChange} 
+                            className={`${inputClass} border-pink-200 dark:border-pink-900/50 focus:ring-pink-500/10`} 
+                            required={formData.isPregnant}
+                          />
+                        </div>
+
+                        <div>
+                          <label className="block text-[10px] font-black text-pink-700 dark:text-pink-400 mb-2 uppercase tracking-widest flex items-center">
+                            <MessageSquare size={10} className="mr-1.5" /> Keterangan/Catatan Medis
+                          </label>
+                          <textarea 
+                            name="pregnancyNotes" 
+                            value={formData.pregnancyNotes || ''} 
+                            onChange={handleChange} 
+                            className={`${inputClass} border-pink-200 dark:border-pink-900/50 focus:ring-pink-500/10 h-[46px] resize-none py-2 text-[11px]`} 
+                            placeholder="Misal: Hipertensi, Janin sungsang..."
+                          />
+                        </div>
                     </div>
 
                     <div className="space-y-3">

@@ -17,7 +17,10 @@ import {
   Download, 
   Printer,
   ChevronRight,
-  Filter
+  Filter,
+  Scale,
+  Ruler,
+  MessageSquare
 } from 'lucide-react';
 import { jsPDF } from 'jspdf';
 import autoTable from 'jspdf-autotable';
@@ -38,12 +41,10 @@ const BirthManagement: React.FC<BirthManagementProps> = ({ residents, setResiden
   const [isSelectingKK, setIsSelectingKK] = useState(false);
   const [viewingBaby, setViewingBaby] = useState<Resident | null>(null);
 
-  // Daftar Dusun untuk filter
   const dusunList = useMemo(() => 
     Array.from(new Set(residents.filter(r => r.status === 'Aktif').map(r => r.dusun))).sort()
   , [residents]);
 
-  // Filter untuk menampilkan bayi yang sudah diinput (Usia 0-1 tahun)
   const registeredBirths = useMemo(() => {
     return residents
       .filter(r => r.status === 'Aktif' && calculateAge(r.birthDate) <= 1)
@@ -67,7 +68,6 @@ const BirthManagement: React.FC<BirthManagementProps> = ({ residents, setResiden
     
     const doc = new jsPDF({ orientation: 'landscape', unit: 'mm', format: 'a4' });
     
-    // Header
     doc.setFontSize(14);
     doc.setFont('helvetica', 'bold');
     doc.text('PEMERINTAH KABUPATEN BLORA', 148.5, 15, { align: 'center' });
@@ -112,7 +112,7 @@ const BirthManagement: React.FC<BirthManagementProps> = ({ residents, setResiden
             </div>
             <div>
               <h2 className="text-xl font-black text-slate-900 dark:text-white uppercase tracking-tighter leading-none">Manajemen Kelahiran</h2>
-              <p className="text-slate-400 text-[10px] font-bold uppercase tracking-widest mt-2 tracking-widest">Pencatatan dan Monitoring Bayi Baru Lahir</p>
+              <p className="text-slate-400 text-[10px] font-bold uppercase tracking-widest mt-2">Pencatatan dan Monitoring Bayi Baru Lahir</p>
             </div>
           </div>
           
@@ -161,7 +161,6 @@ const BirthManagement: React.FC<BirthManagementProps> = ({ residents, setResiden
         </div>
       </div>
 
-      {/* History Table Section */}
       <div className="bg-white dark:bg-slate-900 rounded-[2.5rem] shadow-sm border border-slate-200 dark:border-slate-800 overflow-hidden">
         <div className="p-8 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between">
           <div className="flex items-center space-x-4">
@@ -187,7 +186,7 @@ const BirthManagement: React.FC<BirthManagementProps> = ({ residents, setResiden
                 <th className="px-6 py-5 text-[10px] font-black text-slate-400 uppercase tracking-widest">Identitas Dokumen</th>
                 <th className="px-6 py-5 text-[10px] font-black text-slate-400 uppercase tracking-widest text-center">JK / Usia</th>
                 <th className="px-6 py-5 text-[10px] font-black text-slate-400 uppercase tracking-widest">Orang Tua</th>
-                <th className="px-6 py-5 text-[10px] font-black text-slate-400 uppercase tracking-widest">Wilayah</th>
+                <th className="px-6 py-5 text-[10px] font-black text-slate-400 uppercase tracking-widest">Klinis (Pj/Br)</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
@@ -195,10 +194,7 @@ const BirthManagement: React.FC<BirthManagementProps> = ({ residents, setResiden
                 <tr key={baby.id} className="hover:bg-emerald-50/20 dark:hover:bg-emerald-900/10 transition-all group">
                   <td className="px-8 py-6 text-center text-xs font-black text-slate-300 dark:text-slate-600">{idx + 1}</td>
                   <td className="px-6 py-6">
-                    <button 
-                      onClick={() => setViewingBaby(baby)}
-                      className="flex items-center space-x-3 text-left group-hover:translate-x-1 transition-transform"
-                    >
+                    <button onClick={() => setViewingBaby(baby)} className="flex items-center space-x-3 text-left group-hover:translate-x-1 transition-transform">
                       <div className={`w-10 h-10 rounded-xl flex items-center justify-center shadow-sm ${baby.gender.includes('Laki') ? 'bg-blue-100 dark:bg-blue-900/30 text-blue-600' : 'bg-pink-100 dark:bg-pink-900/30 text-pink-600'}`}>
                         <Baby size={20} />
                       </div>
@@ -214,7 +210,7 @@ const BirthManagement: React.FC<BirthManagementProps> = ({ residents, setResiden
                   </td>
                   <td className="px-6 py-6 text-center">
                     <span className={`px-3 py-1 rounded-full text-[9px] font-black uppercase mb-1 inline-block ${baby.gender.includes('Laki') ? 'bg-blue-100 dark:bg-blue-900/40 text-blue-700 dark:text-blue-300' : 'bg-pink-100 dark:bg-pink-900/40 text-pink-700 dark:text-pink-300'}`}>
-                      {baby.gender.includes('Laki') ? 'Laki-laki' : 'Perempuan'}
+                      {baby.gender.includes('Laki') ? 'L' : 'P'}
                     </span>
                     <div className="text-[10px] font-black text-slate-900 dark:text-slate-300 uppercase">{calculateAge(baby.birthDate)} Thn</div>
                   </td>
@@ -223,8 +219,8 @@ const BirthManagement: React.FC<BirthManagementProps> = ({ residents, setResiden
                     <div className="text-[10px] text-slate-500 dark:text-slate-400 font-bold uppercase">I: {baby.motherName || '-'}</div>
                   </td>
                   <td className="px-6 py-6">
-                    <div className="text-[11px] font-black text-slate-700 dark:text-slate-300 uppercase">{baby.dusun}</div>
-                    <div className="text-[9px] text-slate-400 font-black uppercase">RT {baby.rt} / RW {baby.rw}</div>
+                    <div className="text-[11px] font-black text-slate-700 dark:text-slate-300 uppercase">{baby.birthLength ? `${baby.birthLength} cm` : '-'}</div>
+                    <div className="text-[9px] text-slate-400 font-black uppercase">{baby.birthWeight ? `${baby.birthWeight}` : '-'}</div>
                   </td>
                 </tr>
               )) : (
@@ -242,103 +238,30 @@ const BirthManagement: React.FC<BirthManagementProps> = ({ residents, setResiden
         </div>
       </div>
 
-      {/* Modals Section */}
-      {isSelectingKK && (
-        <SelectKKModal 
-          residents={residents} 
-          onClose={() => setIsSelectingKK(false)} 
-          onSelect={handleRegisterBirth} 
-        />
-      )}
-
-      {isBirthFormOpen && selectedFamily && (
-        <BirthFormModal 
-          family={selectedFamily} 
-          residents={residents}
-          onClose={() => setIsBirthFormOpen(false)} 
-          onSave={(newBaby) => {
-            setResidents(prev => [...prev, newBaby]);
-            setIsBirthFormOpen(false);
-            alert(`Berhasil mendaftarkan kelahiran: ${newBaby.fullName}`);
-          }}
-        />
-      )}
-
-      {viewingBaby && (
-        <EditResidentModal 
-          resident={viewingBaby} 
-          onClose={() => setViewingBaby(null)} 
-          onSave={(updated) => {
-            setResidents(prev => prev.map(r => r.id === updated.id ? updated : r));
-            setViewingBaby(null);
-          }} 
-        />
-      )}
+      {isSelectingKK && <SelectKKModal residents={residents} onClose={() => setIsSelectingKK(false)} onSelect={handleRegisterBirth} />}
+      {isBirthFormOpen && selectedFamily && <BirthFormModal family={selectedFamily} residents={residents} onClose={() => setIsBirthFormOpen(false)} onSave={(newBaby) => { setResidents(prev => [...prev, newBaby]); setIsBirthFormOpen(false); alert(`Berhasil mendaftarkan: ${newBaby.fullName}`); }} />}
+      {viewingBaby && <EditResidentModal resident={viewingBaby} onClose={() => setViewingBaby(null)} onSave={(updated) => { setResidents(prev => prev.map(r => r.id === updated.id ? updated : r)); setViewingBaby(null); }} />}
     </div>
   );
 };
 
-// Modal Baru untuk Pilih KK
 const SelectKKModal: React.FC<{ residents: Resident[], onClose: () => void, onSelect: (r: Resident) => void }> = ({ residents, onClose, onSelect }) => {
   const [query, setQuery] = useState('');
-  
-  const filteredKK = useMemo(() => {
-    return residents
-      .filter(r => r.isHeadOfFamily && r.status === 'Aktif')
-      .filter(r => 
-        r.fullName.toLowerCase().includes(query.toLowerCase()) || 
-        r.noKK.includes(query)
-      ).slice(0, 5);
-  }, [residents, query]);
-
+  const filteredKK = useMemo(() => residents.filter(r => r.isHeadOfFamily && r.status === 'Aktif').filter(r => r.fullName.toLowerCase().includes(query.toLowerCase()) || r.noKK.includes(query)).slice(0, 5), [residents, query]);
   return (
     <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-md animate-in fade-in">
       <div className="bg-white dark:bg-slate-900 rounded-[2.5rem] shadow-2xl w-full max-w-lg overflow-hidden border border-slate-200 dark:border-slate-800 animate-in zoom-in-95">
-        <div className="p-6 bg-slate-900 text-white flex justify-between items-center">
-          <div className="flex items-center space-x-3">
-            <Users size={20} />
-            <span className="text-sm font-black uppercase tracking-widest">Pilih Kepala Keluarga</span>
-          </div>
-          <button onClick={onClose} className="p-2 hover:bg-slate-800 rounded-xl transition-all"><X size={20}/></button>
-        </div>
+        <div className="p-6 bg-slate-900 text-white flex justify-between items-center"><div className="flex items-center space-x-3"><Users size={20} /><span className="text-sm font-black uppercase tracking-widest">Pilih Kepala Keluarga</span></div><button onClick={onClose} className="p-2 hover:bg-slate-800 rounded-xl transition-all"><X size={20}/></button></div>
         <div className="p-8 space-y-6">
           <div className="bg-slate-100 dark:bg-slate-800 rounded-2xl px-5 py-3.5 border border-slate-200 dark:border-slate-700 flex items-center focus-within:bg-white dark:focus-within:bg-slate-800 transition-all">
-            <Search size={18} className="text-slate-400 mr-3" />
-            <input 
-              autoFocus
-              type="text" 
-              placeholder="Cari Nama / No. KK..."
-              className="bg-transparent border-none outline-none text-sm w-full font-bold text-slate-900 dark:text-white"
-              value={query}
-              onChange={(e) => setQuery(e.target.value)}
-            />
+            <Search size={18} className="text-slate-400 mr-3" /><input autoFocus type="text" placeholder="Cari Nama / No. KK..." className="bg-transparent border-none outline-none text-sm w-full font-bold text-slate-900 dark:text-white" value={query} onChange={(e) => setQuery(e.target.value)} />
           </div>
-          
           <div className="space-y-3">
              {filteredKK.length > 0 ? filteredKK.map(kk => (
-               <button 
-                 key={kk.id} 
-                 onClick={() => onSelect(kk)}
-                 className="w-full text-left p-5 bg-slate-50 dark:bg-slate-800 border border-slate-100 dark:border-slate-700 rounded-2xl hover:border-emerald-500 hover:bg-emerald-50 dark:hover:bg-emerald-900/20 transition-all group"
-               >
-                 <div className="flex justify-between items-start">
-                    <div>
-                      <h4 className="text-sm font-black text-slate-900 dark:text-white uppercase">{kk.fullName}</h4>
-                      <p className="text-[10px] text-slate-400 font-mono mt-0.5">KK: {kk.noKK}</p>
-                    </div>
-                    <div className="text-[9px] font-black text-slate-400 uppercase bg-white dark:bg-slate-900 px-2 py-1 rounded-lg border border-slate-200 dark:border-slate-700">
-                      {kk.dusun}
-                    </div>
-                 </div>
-                 <div className="mt-3 flex items-center text-[10px] font-black text-emerald-600 dark:text-emerald-400 uppercase tracking-widest opacity-0 group-hover:opacity-100 transition-opacity">
-                    Pilih & Lanjut <ChevronRight size={12} className="ml-1" />
-                 </div>
+               <button key={kk.id} onClick={() => onSelect(kk)} className="w-full text-left p-5 bg-slate-50 dark:bg-slate-800 border border-slate-100 dark:border-slate-700 rounded-2xl hover:border-emerald-500 hover:bg-emerald-50 dark:hover:bg-emerald-900/20 transition-all group">
+                 <div className="flex justify-between items-start"><div><h4 className="text-sm font-black text-slate-900 dark:text-white uppercase">{kk.fullName}</h4><p className="text-[10px] text-slate-400 font-mono mt-0.5">KK: {kk.noKK}</p></div><div className="text-[9px] font-black text-slate-400 uppercase bg-white dark:bg-slate-900 px-2 py-1 rounded-lg border border-slate-200 dark:border-slate-700">{kk.dusun}</div></div>
                </button>
-             )) : (
-               <div className="py-10 text-center">
-                  <p className="text-xs font-bold text-slate-400 uppercase tracking-widest">Ketik untuk mencari Kepala Keluarga...</p>
-               </div>
-             )}
+             )) : <div className="py-10 text-center"><p className="text-xs font-bold text-slate-400 uppercase tracking-widest">Ketik untuk mencari KK...</p></div>}
           </div>
         </div>
       </div>
@@ -346,158 +269,43 @@ const SelectKKModal: React.FC<{ residents: Resident[], onClose: () => void, onSe
   );
 };
 
-interface BirthFormModalProps {
-  family: Resident;
-  residents: Resident[];
-  onClose: () => void;
-  onSave: (baby: Resident) => void;
-}
-
-const BirthFormModal: React.FC<BirthFormModalProps> = ({ family, residents, onClose, onSave }) => {
+const BirthFormModal: React.FC<{ family: Resident, residents: Resident[], onClose: () => void, onSave: (baby: Resident) => void }> = ({ family, residents, onClose, onSave }) => {
   const mother = residents.find(r => r.noKK === family.noKK && r.relationship.includes('Istri'));
-  
   const [formData, setFormData] = useState({
-    nik: '',
-    fullName: '',
-    gender: '1. Laki-laki' as any,
-    birthDate: new Date().toISOString().split('T')[0],
-    bloodType: 'Tidak tahu' as BloodType,
-    fatherName: family.fullName,
-    motherName: mother?.fullName || '',
+    nik: '', fullName: '', gender: '1. Laki-laki' as any, birthDate: new Date().toISOString().split('T')[0],
+    bloodType: 'Tidak tahu' as BloodType, fatherName: family.fullName, motherName: mother?.fullName || '',
+    birthLength: '', birthWeight: '', birthNotes: ''
   });
-
   const inputClass = "w-full bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl px-5 py-3.5 font-bold text-slate-900 dark:text-white outline-none focus:ring-4 focus:ring-emerald-500/10 transition-all";
-
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (formData.nik.length !== 16) return alert("NIK harus 16 digit!");
-    
-    const baby: Resident = {
-      id: `birth-${Date.now()}`,
-      dusun: family.dusun,
-      rt: family.rt,
-      rw: family.rw,
-      noKK: family.noKK,
-      nik: formData.nik,
-      fullName: formData.fullName.toUpperCase(),
-      relationship: '3. Anak Kandung/Tiri',
-      birthPlace: 'BLORA',
-      birthDate: formData.birthDate,
-      gender: formData.gender,
-      bloodType: formData.bloodType,
-      maritalStatus: '1. Belum kawin' as MaritalStatus,
-      education: '1. Tidak/belum pernah sekolah' as Education,
-      job: '22. Pelajar/Mahasiswa',
-      fatherName: formData.fatherName,
-      motherName: formData.motherName,
-      isHeadOfFamily: false,
-      status: 'Aktif'
-    };
-    onSave(baby);
+    onSave({
+      id: `birth-${Date.now()}`, dusun: family.dusun, rt: family.rt, rw: family.rw, noKK: family.noKK,
+      nik: formData.nik, fullName: formData.fullName.toUpperCase(), relationship: '3. Anak Kandung/Tiri',
+      birthPlace: 'BLORA', birthDate: formData.birthDate, gender: formData.gender, bloodType: formData.bloodType,
+      maritalStatus: '1. Belum kawin' as MaritalStatus, education: '1. Tidak/belum pernah sekolah' as Education,
+      job: '22. Pelajar/Mahasiswa', fatherName: formData.fatherName, motherName: formData.motherName,
+      isHeadOfFamily: false, status: 'Aktif', birthLength: formData.birthLength, birthWeight: formData.birthWeight, birthNotes: formData.birthNotes
+    } as Resident);
   };
-
   return (
     <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-md animate-in fade-in">
-      <div className="bg-white dark:bg-slate-900 rounded-[2.5rem] shadow-2xl w-full max-w-2xl overflow-hidden border border-slate-200 dark:border-slate-800 animate-in zoom-in-95">
-        <div className="p-8 bg-slate-900 text-white flex justify-between items-center">
-          <div className="flex items-center space-x-4">
-             <div className="w-12 h-12 bg-emerald-500 rounded-2xl flex items-center justify-center text-white shadow-lg">
-                <Baby size={24} />
-             </div>
-             <div>
-                <h3 className="text-lg font-black uppercase tracking-tight leading-none">Form Data Kelahiran</h3>
-                <p className="text-slate-400 text-[10px] font-bold uppercase tracking-widest mt-2">KK: {family.noKK}</p>
-             </div>
-          </div>
-          <button onClick={onClose} className="p-2 hover:bg-slate-800 rounded-xl transition-all"><X size={24}/></button>
-        </div>
-
-        <form onSubmit={handleSubmit} className="p-8 space-y-6 max-h-[70vh] overflow-y-auto bg-slate-50/20 dark:bg-slate-900/50">
+      <div className="bg-white dark:bg-slate-900 rounded-[2.5rem] shadow-2xl w-full max-w-2xl overflow-hidden border border-slate-200 dark:border-slate-800 animate-in zoom-in-95 flex flex-col max-h-[90vh]">
+        <div className="p-8 bg-slate-900 text-white flex justify-between items-center"><div className="flex items-center space-x-4"><div className="w-12 h-12 bg-emerald-500 rounded-2xl flex items-center justify-center text-white shadow-lg"><Baby size={24} /></div><div><h3 className="text-lg font-black uppercase tracking-tight leading-none">Form Data Kelahiran</h3><p className="text-slate-400 text-[10px] font-bold uppercase tracking-widest mt-2">KK: {family.noKK}</p></div></div><button onClick={onClose} className="p-2 hover:bg-slate-800 rounded-xl transition-all"><X size={24}/></button></div>
+        <form onSubmit={handleSubmit} className="p-8 space-y-6 overflow-y-auto bg-slate-50/20 dark:bg-slate-900/50">
            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <div className="col-span-2">
-                <label className="text-[10px] font-black text-slate-400 block mb-2 uppercase">Nama Lengkap Bayi</label>
-                <input 
-                  type="text" 
-                  value={formData.fullName} 
-                  onChange={e => setFormData({...formData, fullName: e.target.value})} 
-                  className={`${inputClass} font-black uppercase`} 
-                  placeholder="NAMA LENGKAP BAYI"
-                  required 
-                />
-              </div>
-              <div>
-                <label className="text-[10px] font-black text-slate-400 block mb-2 uppercase">NIK Bayi (16 Digit)</label>
-                <input 
-                  type="text" 
-                  value={formData.nik} 
-                  onChange={e => setFormData({...formData, nik: e.target.value.replace(/\D/g, '').slice(0, 16)})} 
-                  className={inputClass} 
-                  placeholder="3316..."
-                  required 
-                />
-              </div>
-              <div>
-                <label className="text-[10px] font-black text-slate-400 block mb-2 uppercase">Jenis Kelamin</label>
-                <select 
-                  value={formData.gender} 
-                  onChange={e => setFormData({...formData, gender: e.target.value as any})}
-                  className={inputClass}
-                >
-                  <option value="1. Laki-laki" className="dark:bg-slate-800">1. Laki-laki</option>
-                  <option value="2. Perempuan" className="dark:bg-slate-800">2. Perempuan</option>
-                </select>
-              </div>
-              <div>
-                <label className="text-[10px] font-black text-slate-400 block mb-2 uppercase">Tanggal Lahir</label>
-                <input 
-                  type="date" 
-                  value={formData.birthDate} 
-                  onChange={e => setFormData({...formData, birthDate: e.target.value})} 
-                  className={inputClass} 
-                  required 
-                />
-              </div>
-              <div>
-                <label className="text-[10px] font-black text-slate-400 block mb-2 uppercase">Golongan Darah</label>
-                <select 
-                  value={formData.bloodType} 
-                  onChange={e => setFormData({...formData, bloodType: e.target.value as BloodType})}
-                  className={inputClass}
-                >
-                  <option value="Tidak tahu" className="dark:bg-slate-800">Tidak tahu</option>
-                  <option value="A" className="dark:bg-slate-800">A</option>
-                  <option value="B" className="dark:bg-slate-800">B</option>
-                  <option value="AB" className="dark:bg-slate-800">AB</option>
-                  <option value="O" className="dark:bg-slate-800">O</option>
-                </select>
-              </div>
-              <div className="col-span-2 border-t border-slate-100 dark:border-slate-800 pt-6">
-                 <h4 className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-4">Informasi Orang Tua</h4>
-                 <div className="grid grid-cols-2 gap-4">
-                    <div>
-                      <label className="text-[9px] font-black text-slate-400 block mb-1 uppercase">Nama Ayah</label>
-                      <input type="text" value={formData.fatherName} readOnly className="w-full bg-slate-100 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 rounded-xl px-4 py-2 text-xs font-bold text-slate-500 dark:text-slate-400 uppercase" />
-                    </div>
-                    <div>
-                      <label className="text-[9px] font-black text-slate-400 block mb-1 uppercase">Nama Ibu</label>
-                      <input 
-                        type="text" 
-                        value={formData.motherName} 
-                        onChange={e => setFormData({...formData, motherName: e.target.value})}
-                        className="w-full bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-4 py-2 text-xs font-bold text-slate-900 dark:text-white uppercase outline-none focus:ring-2 focus:ring-emerald-500/20" 
-                      />
-                    </div>
-                 </div>
-              </div>
+              <div className="col-span-2"><label className="text-[10px] font-black text-slate-400 block mb-2 uppercase">Nama Lengkap Bayi</label><input type="text" value={formData.fullName} onChange={e => setFormData({...formData, fullName: e.target.value})} className={`${inputClass} font-black uppercase`} placeholder="NAMA BAYI" required /></div>
+              <div><label className="text-[10px] font-black text-slate-400 block mb-2 uppercase">NIK Bayi</label><input type="text" value={formData.nik} onChange={e => setFormData({...formData, nik: e.target.value.replace(/\D/g, '').slice(0, 16)})} className={inputClass} placeholder="16 Digit NIK" required /></div>
+              <div><label className="text-[10px] font-black text-slate-400 block mb-2 uppercase">Jenis Kelamin</label><select value={formData.gender} onChange={e => setFormData({...formData, gender: e.target.value as any})} className={inputClass}><option value="1. Laki-laki">1. Laki-laki</option><option value="2. Perempuan">2. Perempuan</option></select></div>
+              <div><label className="text-[10px] font-black text-slate-400 block mb-2 uppercase">Tanggal Lahir</label><input type="date" value={formData.birthDate} onChange={e => setFormData({...formData, birthDate: e.target.value})} className={inputClass} required /></div>
+              <div><label className="text-[10px] font-black text-slate-400 block mb-2 uppercase">Golongan Darah</label><select value={formData.bloodType} onChange={e => setFormData({...formData, bloodType: e.target.value as BloodType})} className={inputClass}><option value="Tidak tahu">Tidak tahu</option><option value="A">A</option><option value="B">B</option><option value="AB">AB</option><option value="O">O</option></select></div>
+              <div><label className="text-[10px] font-black text-slate-400 block mb-2 uppercase flex items-center"><Ruler size={10} className="mr-1.5" /> Panjang (cm)</label><input type="text" value={formData.birthLength} onChange={e => setFormData({...formData, birthLength: e.target.value})} className={inputClass} placeholder="50" /></div>
+              <div><label className="text-[10px] font-black text-slate-400 block mb-2 uppercase flex items-center"><Scale size={10} className="mr-1.5" /> Berat (gr/kg)</label><input type="text" value={formData.birthWeight} onChange={e => setFormData({...formData, birthWeight: e.target.value})} className={inputClass} placeholder="3200" /></div>
+              <div className="col-span-2 border-t border-slate-100 dark:border-slate-800 pt-6"><h4 className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-4">Informasi Orang Tua</h4><div className="grid grid-cols-2 gap-4"><div><label className="text-[9px] font-black text-slate-400 block mb-1 uppercase">Nama Ayah</label><input type="text" value={formData.fatherName} readOnly className="w-full bg-slate-100 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 rounded-xl px-4 py-2 text-xs font-bold text-slate-500 dark:text-slate-400 uppercase" /></div><div><label className="text-[9px] font-black text-slate-400 block mb-1 uppercase">Nama Ibu</label><input type="text" value={formData.motherName} onChange={e => setFormData({...formData, motherName: e.target.value})} className="w-full bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-4 py-2 text-xs font-bold text-slate-900 dark:text-white uppercase outline-none focus:ring-2 focus:ring-emerald-500/20" /></div></div></div>
+              <div className="col-span-2"><label className="text-[10px] font-black text-slate-400 block mb-2 uppercase flex items-center"><MessageSquare size={10} className="mr-1.5" /> Keterangan</label><textarea value={formData.birthNotes} onChange={e => setFormData({...formData, birthNotes: e.target.value})} className={`${inputClass} h-20 resize-none py-2 text-[11px] font-normal`} placeholder="Misal: Lahir normal..." /></div>
            </div>
-
-           <div className="pt-8 flex items-center justify-end space-x-3">
-              <button type="button" onClick={onClose} className="px-8 py-4 text-xs font-black text-slate-400 uppercase tracking-widest hover:text-slate-900 dark:hover:text-white transition-all">Batal</button>
-              <button type="submit" className="px-12 py-4 bg-emerald-600 text-white rounded-2xl text-sm font-black uppercase shadow-xl hover:bg-emerald-700 transition-all flex items-center space-x-3">
-                <Save size={18} />
-                <span>Simpan Bayi</span>
-              </button>
-           </div>
+           <div className="pt-8 flex items-center justify-end space-x-3"><button type="button" onClick={onClose} className="px-8 py-4 text-xs font-black text-slate-400 uppercase tracking-widest hover:text-slate-900 dark:hover:text-white transition-all">Batal</button><button type="submit" className="px-12 py-4 bg-emerald-600 text-white rounded-2xl text-sm font-black uppercase shadow-xl hover:bg-emerald-700 transition-all flex items-center space-x-3"><Save size={18} /><span>Simpan Bayi</span></button></div>
         </form>
       </div>
     </div>

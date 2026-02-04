@@ -1,6 +1,6 @@
 
 import React, { useState } from 'react';
-import { X, User, Printer, UserPlus, Skull, Trash2, Calendar, Users, Save, PlaneLanding, HeartPulse, ShieldAlert, ShieldCheck, Stethoscope } from 'lucide-react';
+import { X, User, Printer, UserPlus, Skull, Trash2, Calendar, Users, Save, PlaneLanding, HeartPulse, ShieldAlert, ShieldCheck, Stethoscope, MessageSquare } from 'lucide-react';
 import { Resident, ResidentStatus, PregnancyRisk } from '../types';
 import { calculateAge } from '../utils/helpers';
 import EditResidentModal from './EditResidentModal';
@@ -20,7 +20,7 @@ const FamilyDetailModal: React.FC<FamilyDetailModalProps> = ({ noKK, residents, 
   const [pregnancyConfirm, setPregnancyConfirm] = useState<Resident | null>(null);
   
   const targetNoKK = noKK.trim();
-  const headRef = residents.find(r => r.noKK.trim() === targetNoKK && r.isHeadOfFamily);
+  const headRef = residents.find(r => r.noKK.trim() === targetNoKK && r.status === 'Aktif' && r.isHeadOfFamily);
   const currentViewStatus = headRef?.status || 'Aktif';
   
   const familyMembers = residents.filter(r => r.noKK.trim() === targetNoKK && r.status === currentViewStatus);
@@ -52,15 +52,15 @@ const FamilyDetailModal: React.FC<FamilyDetailModalProps> = ({ noKK, residents, 
   const archiveDeath = (date: string) => {
     if (!deathConfirm) return;
     setResidents(prev => prev.map(r => 
-      r.id === deathConfirm.id ? { ...r, status: 'Meninggal' as ResidentStatus, deathDate: date, isPregnant: false, pregnancyRisk: undefined } : r
+      r.id === deathConfirm.id ? { ...r, status: 'Meninggal' as ResidentStatus, deathDate: date, isPregnant: false, pregnancyRisk: undefined, pregnancyNotes: undefined } : r
     ));
     setDeathConfirm(null);
   };
 
-  const handleArchivePregnancy = (date: string, risk: PregnancyRisk) => {
+  const handleArchivePregnancy = (date: string, risk: PregnancyRisk, notes: string) => {
     if (!pregnancyConfirm) return;
     setResidents(prev => prev.map(r => 
-      r.id === pregnancyConfirm.id ? { ...r, isPregnant: true, pregnancyStartDate: date, pregnancyRisk: risk } : r
+      r.id === pregnancyConfirm.id ? { ...r, isPregnant: true, pregnancyStartDate: date, pregnancyRisk: risk, pregnancyNotes: notes } : r
     ));
     setPregnancyConfirm(null);
   };
@@ -74,8 +74,6 @@ const FamilyDetailModal: React.FC<FamilyDetailModalProps> = ({ noKK, residents, 
     setResidents(prev => [...prev, { ...newMember, status: 'Aktif' as ResidentStatus }]);
     setIsAddingMember(false);
   };
-
-  const inputClass = "w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-4 py-3 text-sm font-bold text-slate-900 dark:text-white outline-none focus:ring-2 focus:ring-blue-500/20 transition-all";
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-md animate-in fade-in duration-300">
@@ -126,13 +124,16 @@ const FamilyDetailModal: React.FC<FamilyDetailModalProps> = ({ noKK, residents, 
                       <button onClick={() => currentViewStatus === 'Aktif' && setEditingMember(m)} className={`text-xs font-black font-mono ${currentViewStatus === 'Aktif' ? 'text-blue-600 dark:text-blue-400 hover:underline' : 'text-slate-400'}`}>{m.nik}</button>
                       <h5 className="text-sm font-black text-slate-900 dark:text-white uppercase truncate mt-0.5">{m.fullName}</h5>
                       {m.isPregnant && (
-                        <span className={`inline-flex items-center px-2 py-0.5 rounded text-[8px] font-black uppercase mt-1 animate-pulse ${
-                          m.pregnancyRisk === 'Tinggi' ? 'bg-rose-100 text-rose-700' :
-                          m.pregnancyRisk === 'Sedang' ? 'bg-amber-100 text-amber-700' :
-                          'bg-emerald-100 text-emerald-700'
-                        }`}>
-                          <HeartPulse size={8} className="mr-1" /> Hamil ({m.pregnancyRisk || 'Resiko ?'})
-                        </span>
+                        <div className="mt-1 flex flex-col">
+                           <span className={`inline-flex items-center px-2 py-0.5 rounded text-[8px] font-black uppercase self-start animate-pulse ${
+                             m.pregnancyRisk === 'Tinggi' ? 'bg-rose-100 text-rose-700' :
+                             m.pregnancyRisk === 'Sedang' ? 'bg-amber-100 text-amber-700' :
+                             'bg-emerald-100 text-emerald-700'
+                           }`}>
+                             <HeartPulse size={8} className="mr-1" /> Hamil ({m.pregnancyRisk || 'Resiko ?'})
+                           </span>
+                           {m.pregnancyNotes && <p className="text-[8px] text-slate-400 italic mt-0.5 truncate max-w-[150px]">{m.pregnancyNotes}</p>}
+                        </div>
                       )}
                     </div>
                     <div className="text-center md:text-left">
@@ -183,9 +184,146 @@ const FamilyDetailModal: React.FC<FamilyDetailModalProps> = ({ noKK, residents, 
   );
 };
 
-const PregnancyModal: React.FC<{ member: Resident, onClose: () => void, onConfirm: (date: string, risk: PregnancyRisk) => void }> = ({ member, onClose, onConfirm }) => {
+// Internal sub-components to fix missing definitions
+
+const InternalAddMemberModal: React.FC<{ noKK: string, familyBase: Resident, onClose: () => void, onSave: (m: Resident) => void }> = ({ noKK, familyBase, onClose, onSave }) => {
+  const [formData, setFormData] = useState({
+    nik: '',
+    fullName: '',
+    relationship: '3. Anak Kandung/Tiri',
+    birthDate: '',
+    gender: '1. Laki-laki' as any,
+    bloodType: 'Tidak tahu' as any,
+    maritalStatus: '1. Belum kawin' as any,
+    education: '1. Tidak/belum pernah sekolah' as any,
+    job: '22. Pelajar/Mahasiswa',
+    fatherName: familyBase.isHeadOfFamily ? familyBase.fullName : '',
+    motherName: !familyBase.isHeadOfFamily ? familyBase.fullName : '',
+  });
+
+  const inputClass = "w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-4 py-3 font-bold text-slate-900 dark:text-white outline-none focus:ring-2 focus:ring-blue-500/20 transition-all";
+
+  return (
+    <div className="fixed inset-0 z-[110] flex items-center justify-center p-4 bg-slate-900/70 backdrop-blur-md animate-in zoom-in-95">
+      <div className="bg-white dark:bg-slate-900 rounded-[2.5rem] shadow-2xl w-full max-w-lg overflow-hidden border border-slate-200 dark:border-slate-800">
+        <div className="p-6 bg-emerald-600 text-white font-black text-sm uppercase tracking-widest flex items-center justify-between">
+           <div className="flex items-center">
+             <UserPlus size={18} className="mr-3" />
+             <span>Tambah Anggota Baru</span>
+           </div>
+           <button onClick={onClose}><X size={20}/></button>
+        </div>
+        <div className="p-8 space-y-4 max-h-[70vh] overflow-y-auto">
+           <div className="grid grid-cols-1 gap-4">
+              <div>
+                <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest block mb-1">Nama Lengkap</label>
+                <input type="text" value={formData.fullName} onChange={e => setFormData({...formData, fullName: e.target.value.toUpperCase()})} className={inputClass} required />
+              </div>
+              <div>
+                <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest block mb-1">NIK (16 Digit)</label>
+                <input type="text" value={formData.nik} onChange={e => setFormData({...formData, nik: e.target.value.replace(/\D/g, '').slice(0, 16)})} className={inputClass} required />
+              </div>
+              <div className="grid grid-cols-2 gap-3">
+                 <div>
+                   <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest block mb-1">Hubungan</label>
+                   <select value={formData.relationship} onChange={e => setFormData({...formData, relationship: e.target.value})} className={inputClass}>
+                     <option value="2. Istri">Istri</option>
+                     <option value="3. Anak Kandung/Tiri">Anak</option>
+                     <option value="7. Orang Tua">Orang Tua</option>
+                     <option value="9. Lainnya">Lainnya</option>
+                   </select>
+                 </div>
+                 <div>
+                   <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest block mb-1">JK</label>
+                   <select value={formData.gender} onChange={e => setFormData({...formData, gender: e.target.value as any})} className={inputClass}>
+                     <option value="1. Laki-laki">Laki-laki</option>
+                     <option value="2. Perempuan">Perempuan</option>
+                   </select>
+                 </div>
+              </div>
+              <div>
+                <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest block mb-1">Tgl Lahir</label>
+                <input type="date" value={formData.birthDate} onChange={e => setFormData({...formData, birthDate: e.target.value})} className={inputClass} required />
+              </div>
+           </div>
+           <div className="pt-4">
+              <button onClick={() => {
+                if(formData.nik.length !== 16) return alert("NIK 16 Digit!");
+                onSave({
+                  ...formData,
+                  id: `int-${Date.now()}`,
+                  noKK: noKK,
+                  dusun: familyBase.dusun,
+                  rt: familyBase.rt,
+                  rw: familyBase.rw,
+                  birthPlace: 'BLORA',
+                  isHeadOfFamily: false,
+                  status: 'Aktif'
+                } as Resident);
+              }} className="w-full py-4 bg-emerald-600 text-white rounded-2xl font-black text-xs uppercase shadow-xl hover:bg-emerald-700 transition-all">Simpan Anggota</button>
+           </div>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+const DeathModal: React.FC<{ member: Resident, onClose: () => void, onConfirm: (date: string) => void }> = ({ member, onClose, onConfirm }) => {
+  const [date, setDate] = useState(new Date().toISOString().split('T')[0]);
+  return (
+    <div className="fixed inset-0 z-[110] flex items-center justify-center p-4 bg-slate-900/70 backdrop-blur-md animate-in zoom-in-95">
+      <div className="bg-white dark:bg-slate-900 rounded-[2.5rem] shadow-2xl w-full max-w-sm overflow-hidden border border-slate-200 dark:border-slate-800">
+        <div className="p-6 bg-slate-900 text-white font-black text-sm uppercase tracking-widest flex items-center justify-between">
+           <span>Lapor Kematian</span>
+           <button onClick={onClose}><X size={20}/></button>
+        </div>
+        <div className="p-8 space-y-6 text-center">
+           <div className="bg-rose-50 dark:bg-rose-900/20 p-4 rounded-2xl border border-rose-100 dark:border-rose-900/30">
+              <h5 className="text-sm font-black text-slate-900 dark:text-white uppercase">{member.fullName}</h5>
+           </div>
+           <div>
+              <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest block mb-2">Tanggal Wafat</label>
+              <input type="date" value={date} onChange={e => setDate(e.target.value)} className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-4 py-3 font-bold text-center outline-none focus:ring-2 focus:ring-rose-500/20 transition-all" />
+           </div>
+           <button onClick={() => onConfirm(date)} className="w-full py-4 bg-rose-600 text-white rounded-2xl font-black text-xs uppercase shadow-xl hover:bg-rose-700 transition-all">Konfirmasi Wafat</button>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+const MemberDeleteReasonModal: React.FC<{ member: Resident, onClose: () => void, onConfirm: (reason: string) => void }> = ({ member, onClose, onConfirm }) => {
+  const [reason, setReason] = useState('Data Ganda / Salah Input');
+  return (
+    <div className="fixed inset-0 z-[110] flex items-center justify-center p-4 bg-slate-900/70 backdrop-blur-md animate-in zoom-in-95">
+      <div className="bg-white dark:bg-slate-900 rounded-[2.5rem] shadow-2xl w-full max-w-sm overflow-hidden border border-slate-200 dark:border-slate-800">
+        <div className="p-6 bg-rose-600 text-white font-black text-sm uppercase tracking-widest flex items-center justify-between">
+           <span>Hapus Anggota</span>
+           <button onClick={onClose}><X size={20}/></button>
+        </div>
+        <div className="p-8 space-y-6">
+           <div className="bg-rose-50 dark:bg-rose-900/20 p-4 rounded-2xl border border-rose-100 dark:border-rose-900/30 text-center">
+              <h5 className="text-sm font-black text-slate-900 dark:text-white uppercase">{member.fullName}</h5>
+           </div>
+           <div>
+              <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest block mb-2">Alasan Penghapusan</label>
+              <select value={reason} onChange={e => setReason(e.target.value)} className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-4 py-3 font-bold text-xs uppercase outline-none focus:ring-2 focus:ring-rose-500/20 transition-all">
+                 <option value="Data Ganda / Salah Input">Data Ganda / Salah Input</option>
+                 <option value="Pindah Luar Kota (Tanpa Lapor)">Pindah Tanpa Lapor</option>
+                 <option value="Lainnya">Lainnya</option>
+              </select>
+           </div>
+           <button onClick={() => onConfirm(reason)} className="w-full py-4 bg-rose-600 text-white rounded-2xl font-black text-xs uppercase shadow-xl hover:bg-rose-700 transition-all">Hapus Permanen</button>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+const PregnancyModal: React.FC<{ member: Resident, onClose: () => void, onConfirm: (date: string, risk: PregnancyRisk, notes: string) => void }> = ({ member, onClose, onConfirm }) => {
   const [date, setDate] = useState(new Date().toISOString().split('T')[0]);
   const [risk, setRisk] = useState<PregnancyRisk>('Rendah');
+  const [notes, setNotes] = useState('');
   const inputClass = "w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-4 py-3 font-bold text-slate-900 dark:text-white focus:bg-white dark:focus:bg-slate-800 transition-all outline-none";
 
   return (
@@ -195,7 +333,7 @@ const PregnancyModal: React.FC<{ member: Resident, onClose: () => void, onConfir
            <HeartPulse size={18} className="mr-3" />
            <span>Konfirmasi Kehamilan</span>
         </div>
-        <div className="p-8 space-y-6">
+        <div className="p-8 space-y-5 max-h-[80vh] overflow-y-auto">
            <div className="text-center bg-pink-50 dark:bg-pink-900/20 p-4 rounded-2xl border border-pink-100 dark:border-pink-900/30">
               <p className="text-[10px] text-pink-600 dark:text-pink-400 font-black uppercase mb-1 tracking-widest">Monitoring Ibu Hamil Baru</p>
               <p className="text-md font-black uppercase text-slate-900 dark:text-white leading-tight">{member.fullName}</p>
@@ -214,128 +352,27 @@ const PregnancyModal: React.FC<{ member: Resident, onClose: () => void, onConfir
                    <button onClick={() => setRisk('Sedang')} className={`py-2 rounded-xl text-[9px] font-black uppercase border-2 transition-all ${risk === 'Sedang' ? 'bg-amber-400 border-amber-500 text-slate-900 dark:text-white shadow-md' : 'bg-white dark:bg-slate-800 border-slate-100 dark:border-slate-700 text-slate-400'}`}>Kuning</button>
                    <button onClick={() => setRisk('Rendah')} className={`py-2 rounded-xl text-[9px] font-black uppercase border-2 transition-all ${risk === 'Rendah' ? 'bg-emerald-500 border-emerald-600 text-white shadow-md' : 'bg-white dark:bg-slate-800 border-slate-100 dark:border-slate-700 text-slate-400'}`}>Hijau</button>
                 </div>
-                <p className="text-[8px] text-slate-400 mt-2 font-bold uppercase italic text-center">
-                  {risk === 'Tinggi' ? '* Rujukan Rumah Sakit' : risk === 'Sedang' ? '* Rujukan Puskesmas' : '* Bisa di Puskesmas'}
-                </p>
+              </div>
+
+              <div>
+                <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest block mb-2 flex items-center">
+                  <MessageSquare size={10} className="mr-1.5" /> Keterangan Resiko
+                </label>
+                <textarea 
+                  value={notes} 
+                  onChange={e => setNotes(e.target.value)} 
+                  className={`${inputClass} h-20 resize-none text-[11px]`} 
+                  placeholder="Misal: Riwayat HT, usia > 35th, anak ke-4, dll..."
+                />
               </div>
            </div>
 
            <div className="space-y-3 pt-2">
-              <button onClick={() => onConfirm(date, risk)} className="w-full py-4 bg-pink-600 text-white rounded-2xl font-black text-sm uppercase shadow-xl hover:bg-pink-700 transition-all">Simpan Status Hamil</button>
+              <button onClick={() => onConfirm(date, risk, notes)} className="w-full py-4 bg-pink-600 text-white rounded-2xl font-black text-sm uppercase shadow-xl hover:bg-pink-700 transition-all">Simpan Status Hamil</button>
               <button onClick={onClose} className="w-full py-3 text-center text-xs font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest hover:text-slate-900 dark:hover:text-white transition-all">Batal</button>
            </div>
         </div>
       </div>
-    </div>
-  );
-};
-
-const MemberDeleteReasonModal: React.FC<{ member: Resident, onClose: () => void, onConfirm: (reason: string) => void }> = ({ member, onClose, onConfirm }) => {
-  const [reason, setReason] = useState('');
-  const inputClass = "w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-4 py-3 font-bold text-sm text-slate-900 dark:text-white h-24 resize-none focus:bg-white dark:focus:bg-slate-800 transition-all outline-none";
-
-  return (
-    <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-slate-900/70 backdrop-blur-md animate-in zoom-in-95">
-      <div className="bg-white dark:bg-slate-900 rounded-[2.5rem] shadow-2xl w-full max-w-sm overflow-hidden border border-slate-200 dark:border-slate-800">
-        <div className="p-6 bg-slate-900 text-white font-black text-sm uppercase tracking-widest flex items-center">
-           <Trash2 size={18} className="mr-3 text-rose-500" />
-           <span>Hapus Anggota</span>
-        </div>
-        <div className="p-8 space-y-6">
-           <div className="text-center bg-slate-50 dark:bg-slate-800 p-4 rounded-2xl border border-slate-100 dark:border-slate-700">
-              <p className="text-[10px] text-slate-400 font-black uppercase mb-1 tracking-widest">Akan Dipindahkan Ke Arsip Terhapus</p>
-              <p className="text-md font-black uppercase text-slate-900 dark:text-white leading-tight">{member.fullName}</p>
-           </div>
-           <div>
-              <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest block mb-2">Alasan Penghapusan</label>
-              <textarea value={reason} onChange={e => setReason(e.target.value)} className={inputClass} placeholder="Isi alasan..." required />
-           </div>
-           <div className="pt-2 space-y-3">
-              <button onClick={() => reason.trim() ? onConfirm(reason) : alert("Harap isi alasan!")} className="w-full py-4 bg-rose-600 text-white rounded-2xl font-black text-sm uppercase shadow-xl hover:bg-rose-700 transition-all">Konfirmasi Hapus</button>
-              <button onClick={onClose} className="w-full py-3 text-center text-xs font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest hover:text-slate-900 dark:hover:text-white transition-all">Batal & Kembali</button>
-           </div>
-        </div>
-      </div>
-    </div>
-  );
-};
-
-const DeathModal: React.FC<{ member: Resident, onClose: () => void, onConfirm: (date: string) => void }> = ({ member, onClose, onConfirm }) => {
-  const [date, setDate] = useState(new Date().toISOString().split('T')[0]);
-  const inputClass = "w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-4 py-3 font-bold text-slate-900 dark:text-white focus:bg-white dark:focus:bg-slate-800 transition-all outline-none";
-
-  return (
-    <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-slate-900/70 backdrop-blur-md animate-in zoom-in-95">
-      <div className="bg-white dark:bg-slate-900 rounded-[2.5rem] shadow-2xl w-full max-w-sm overflow-hidden border border-slate-200 dark:border-slate-800">
-        <div className="p-6 bg-slate-900 text-white font-black text-sm uppercase tracking-widest flex items-center">
-           <Skull size={18} className="mr-3 text-rose-500" />
-           <span>Lapor Kematian</span>
-        </div>
-        <div className="p-8 space-y-6 text-center">
-           <div className="bg-rose-50 dark:bg-rose-900/20 p-4 rounded-2xl border border-rose-100 dark:border-rose-900/30">
-              <p className="text-[10px] text-rose-600 dark:text-rose-400 font-black uppercase mb-1 tracking-widest">Penduduk Meninggal Dunia</p>
-              <p className="text-md font-black uppercase text-slate-900 dark:text-white leading-tight">{member.fullName}</p>
-           </div>
-           <div className="text-left">
-              <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest block mb-2">Tanggal Wafat</label>
-              <input type="date" value={date} onChange={e => setDate(e.target.value)} className={inputClass} />
-           </div>
-           <div className="space-y-3">
-              <button onClick={() => onConfirm(date)} className="w-full py-4 bg-rose-600 text-white rounded-2xl font-black text-sm uppercase shadow-xl hover:bg-rose-700 transition-all">Simpan Ke Arsip Kematian</button>
-              <button onClick={onClose} className="w-full py-3 text-center text-xs font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest hover:text-slate-900 dark:hover:text-white transition-all">Batal</button>
-           </div>
-        </div>
-      </div>
-    </div>
-  );
-};
-
-const InternalAddMemberModal: React.FC<{ noKK: string, familyBase: Resident, onClose: () => void, onSave: (r: Resident) => void }> = ({ noKK, familyBase, onClose, onSave }) => {
-  const [m, setM] = useState<Omit<Resident, 'id' | 'status'>>({ 
-    ...familyBase, nik: '', fullName: '', relationship: '3. Anak Kandung/Tiri', birthDate: '', isHeadOfFamily: false 
-  });
-  const inputClass = "w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl px-5 py-3.5 font-bold text-slate-900 dark:text-white outline-none";
-
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    onSave({ ...m, id: `member-${Date.now()}`, status: 'Aktif' as ResidentStatus });
-  };
-  return (
-    <div className="fixed inset-0 z-[70] flex items-center justify-center p-4 bg-slate-900/40 backdrop-blur-sm">
-       <div className="bg-white dark:bg-slate-900 rounded-[2.5rem] shadow-2xl w-full max-w-2xl overflow-hidden border border-slate-200 dark:border-slate-800">
-          <div className="p-6 bg-slate-900 text-white font-black text-sm uppercase tracking-widest flex justify-between items-center">
-             <span>Tambah Anggota Keluarga</span>
-             <button onClick={onClose}><X size={20}/></button>
-          </div>
-          <form onSubmit={handleSubmit} className="p-8 space-y-6">
-             <div className="grid grid-cols-2 gap-6">
-                <div className="col-span-2">
-                  <label className="text-[10px] font-black text-slate-400 block mb-2 uppercase">NIK Baru</label>
-                  <input type="text" value={m.nik} onChange={e => setM({...m, nik: e.target.value.replace(/\D/g, '').slice(0, 16)})} className={inputClass} required />
-                </div>
-                <div className="col-span-2">
-                  <label className="text-[10px] font-black text-slate-400 block mb-2 uppercase">Nama Lengkap</label>
-                  <input type="text" value={m.fullName} onChange={e => setM({...m, fullName: e.target.value})} className={`${inputClass} font-black uppercase`} required />
-                </div>
-                <div>
-                  <label className="text-[10px] font-black text-slate-400 block mb-2 uppercase">Hubungan</label>
-                   <select value={m.relationship} onChange={e => setM({...m, relationship: e.target.value})} className={inputClass}>
-                      <option value="2. Istri" className="dark:bg-slate-800">Istri</option>
-                      <option value="3. Anak Kandung/Tiri" className="dark:bg-slate-800">Anak Kandung/Tiri</option>
-                      <option value="9. Lainnya" className="dark:bg-slate-800">Lainnya</option>
-                   </select>
-                </div>
-                <div>
-                  <label className="text-[10px] font-black text-slate-400 block mb-2 uppercase">Tanggal Lahir</label>
-                  <input type="date" value={m.birthDate} onChange={e => setM({...m, birthDate: e.target.value})} className={inputClass} required/>
-                </div>
-             </div>
-             <div className="pt-4 flex justify-end space-x-3">
-                <button type="button" onClick={onClose} className="px-8 py-4 text-xs font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest hover:text-slate-900 dark:hover:text-white transition-all">Batal</button>
-                <button type="submit" className="px-10 py-4 bg-emerald-600 text-white rounded-2xl text-xs font-black uppercase shadow-xl hover:bg-emerald-700 transition-all">Simpan</button>
-             </div>
-          </form>
-       </div>
     </div>
   );
 };

@@ -36,6 +36,11 @@ export interface Resident {
   isPregnant?: boolean;
   pregnancyStartDate?: string;
   pregnancyRisk?: PregnancyRisk;
+  pregnancyNotes?: string;
+  // Birth Clinical Fields
+  birthLength?: string;
+  birthWeight?: string;
+  birthNotes?: string;
 }
 
 export interface FirebaseConfig {

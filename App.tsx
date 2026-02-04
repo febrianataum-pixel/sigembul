@@ -26,7 +26,7 @@ const App: React.FC = () => {
     return saved ? JSON.parse(saved) : {
       appName: 'SIGA Ngumbul',
       subtitle: 'Kec. Todanan, Kab. Blora',
-      logoUrl: 'https://upload.wikimedia.org/wikipedia/commons/1/1d/Lambang_Kabupaten_Blora.png',
+      logoUrl: 'https://i.ibb.co.com/jPz7kW5J/Chat-GPT-Image-Feb-4-2026-09-56-11-AM.png',
       operatorName: 'ADMIN DESA',
       villageHeadName: 'SULARNO',
       theme: 'light',
@@ -214,16 +214,6 @@ const App: React.FC = () => {
       alert("Gagal Keluar");
     }
   };
-
-  // Skip rendering auth loading screen to make access immediate
-  // if (authLoading) { ... }
-
-  // LOGIN SCREEN TEMPORARILY HIDDEN BY REQUEST
-  /*
-  if (config.firebaseConfig?.enabled && !user) {
-    return <Login config={config} />;
-  }
-  */
 
   const renderContent = () => {
     const activeResidents = residents.filter(r => r.status === 'Aktif');
