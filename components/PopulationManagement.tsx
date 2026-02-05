@@ -19,7 +19,12 @@ import {
   Info,
   PlaneLanding,
   Calendar,
-  Save
+  Save,
+  MoreVertical,
+  ChevronRight,
+  User,
+  ExternalLink,
+  ChevronDown
 } from 'lucide-react';
 import { jsPDF } from 'jspdf';
 import autoTable from 'jspdf-autotable';
@@ -40,7 +45,6 @@ const PopulationManagement: React.FC<PopulationManagementProps> = ({ residents, 
   const [isImporting, setIsImporting] = useState(false);
   const [isPreparingPDF, setIsPreparingPDF] = useState(false);
   const [filters, setFilters] = useState({ dusun: '', rw: '', rt: '' });
-  const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const [viewingFamilyKK, setViewingFamilyKK] = useState<string | null>(null);
   const [editingResident, setEditingResident] = useState<Resident | null>(null);
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
@@ -91,95 +95,42 @@ const PopulationManagement: React.FC<PopulationManagementProps> = ({ residents, 
   const handleDownloadPDF = async () => {
     if (residentsToExport.length === 0) return alert("Tidak ada data untuk dicetak.");
     setIsPreparingPDF(true);
-
     try {
-      const doc = new jsPDF({
-        orientation: 'landscape',
-        unit: 'mm',
-        format: 'a4'
-      });
-
+      const doc = new jsPDF({ orientation: 'landscape', unit: 'mm', format: 'a4' });
       const addHeader = (data: any) => {
         doc.setFontSize(14);
         doc.setFont('helvetica', 'bold');
         doc.text('PEMERINTAH KABUPATEN BLORA', 148.5, 15, { align: 'center' });
         doc.setFontSize(12);
         doc.text('KECAMATAN TODANAN - DESA NGUMBUL', 148.5, 21, { align: 'center' });
-        doc.setFontSize(8);
-        doc.setFont('helvetica', 'normal');
-        doc.text('Alamat: Jl. Raya Todanan-Ngumbul KM. 05, Desa Ngumbul, Kec. Todanan, Kab. Blora (58256)', 148.5, 26, { align: 'center' });
         doc.setLineWidth(0.5);
         doc.line(20, 28, 277, 28);
-        doc.setLineWidth(0.1);
-        doc.line(20, 29, 277, 29);
-
         doc.setFontSize(11);
-        doc.setFont('helvetica', 'bold');
         doc.text('DAFTAR PENDUDUK BY NAME BY ADDRESS (BNBA)', 148.5, 38, { align: 'center' });
-        
-        doc.setFontSize(8);
-        doc.setFont('helvetica', 'normal');
-        doc.text(`Wilayah: ${filters.dusun || 'Seluruh Desa'} ${filters.rw ? '/ RW ' + filters.rw : ''} ${filters.rt ? '/ RT ' + filters.rt : ''}`, 20, 45);
-        doc.text(`Tanggal Cetak: ${new Date().toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' })}`, 277, 45, { align: 'right' });
       };
 
       const tableData = residentsToExport.map((r, idx) => [
-        idx + 1,
-        r.fullName.toUpperCase(),
-        r.nik,
-        r.noKK,
-        `${r.dusun} / ${r.rw} / ${r.rt}`,
-        r.gender.includes('Laki') ? 'L' : 'P',
-        calculateAge(r.birthDate),
-        r.relationship.split('. ').pop() || r.relationship,
-        r.education.split('. ').pop() || r.education,
-        r.job.split('. ').pop()?.toUpperCase() || r.job.toUpperCase()
+        idx + 1, r.fullName.toUpperCase(), r.nik, r.noKK, `${r.dusun} / ${r.rw} / ${r.rt}`,
+        r.gender.includes('Laki') ? 'L' : 'P', calculateAge(r.birthDate), r.relationship.split('. ').pop() || r.relationship,
+        r.education.split('. ').pop() || r.education, r.job.split('. ').pop()?.toUpperCase() || r.job.toUpperCase()
       ]);
 
       autoTable(doc, {
-        head: [['NO', 'NAMA LENGKAP', 'NIK', 'NOMOR KK', 'ALAMAT (DS/RW/RT)', 'JK', 'USIA', 'HUBUNGAN', 'PENDIDIKAN', 'PEKERJAAN']],
+        head: [['NO', 'NAMA LENGKAP', 'NIK', 'NOMOR KK', 'ALAMAT', 'JK', 'USIA', 'HUBUNGAN', 'PENDIDIKAN', 'PEKERJAAN']],
         body: tableData,
         startY: 50,
-        styles: { fontSize: 7, cellPadding: 1.5, lineColor: [0, 0, 0], lineWidth: 0.1 },
-        headStyles: { fillColor: [230, 230, 230], textColor: [0, 0, 0], fontStyle: 'bold', halign: 'center' },
-        columnStyles: {
-          0: { halign: 'center', cellWidth: 8 },
-          1: { fontStyle: 'bold', cellWidth: 45 },
-          5: { halign: 'center', cellWidth: 8 },
-          6: { halign: 'center', cellWidth: 10 },
-        },
-        margin: { top: 50, bottom: 40 },
-        didDrawPage: (data) => {
-          if (data.pageNumber === 1) {
-            addHeader(data);
-          }
-        }
+        styles: { fontSize: 7, cellPadding: 1.5 },
+        headStyles: { fillColor: [230, 230, 230], textColor: [0, 0, 0] },
+        didDrawPage: (data) => { if (data.pageNumber === 1) addHeader(data); }
       });
 
       const finalY = (doc as any).lastAutoTable.finalY || 150;
-      const signatureY = finalY + 15;
-      
-      let currentY: number;
-      if (signatureY > 170) {
-        doc.addPage();
-        currentY = 20;
-      } else {
-        currentY = signatureY;
-      }
-
-      const dateStr = `Ngumbul, ${new Date().toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' })}`;
-      doc.setFontSize(9);
-      doc.text(dateStr, 230, currentY, { align: 'center' });
-      doc.setFont('helvetica', 'bold');
-      doc.text('KEPALA DESA NGUMBUL', 230, currentY + 5, { align: 'center' });
-      doc.text(config.villageHeadName.toUpperCase(), 230, currentY + 25, { align: 'center' });
-      doc.setLineWidth(0.2);
-      doc.line(210, currentY + 26, 250, currentY + 26);
-
+      doc.text(`Ngumbul, ${new Date().toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' })}`, 230, finalY + 15, { align: 'center' });
+      doc.text('KEPALA DESA NGUMBUL', 230, finalY + 20, { align: 'center' });
+      doc.text(config.villageHeadName.toUpperCase(), 230, finalY + 40, { align: 'center' });
       doc.save(`BNBA_Ngumbul_${new Date().toISOString().split('T')[0]}.pdf`);
     } catch (error) {
-      console.error("PDF Generation Error:", error);
-      alert("Gagal membuat PDF. Pastikan koneksi internet stabil.");
+      alert("Gagal membuat PDF.");
     } finally {
       setIsPreparingPDF(false);
     }
@@ -236,10 +187,10 @@ const PopulationManagement: React.FC<PopulationManagementProps> = ({ residents, 
         });
         setResidents(prev => [...prev, ...newResidents]);
         setIsImporting(false);
-        alert(`Berhasil mengimpor ${newResidents.length} data penduduk.`);
+        alert(`Berhasil mengimpor ${newResidents.length} data.`);
         if (fileInputRef.current) fileInputRef.current.value = '';
       } catch (err) {
-        alert('Gagal mengimpor file.');
+        alert('Gagal impor.');
         setIsImporting(false);
       }
     };
@@ -250,166 +201,204 @@ const PopulationManagement: React.FC<PopulationManagementProps> = ({ residents, 
     if (!movingFamily) return;
     setResidents(prev => prev.map(r => 
       r.noKK === movingFamily.noKK ? {
-        ...r, 
-        status: 'Pindah' as ResidentStatus, 
-        moveDestination: destination, 
-        moveDate: date
+        ...r, status: 'Pindah' as ResidentStatus, moveDestination: destination, moveDate: date
       } : r
     ));
     setMovingFamily(null);
   };
 
   return (
-    <div className="space-y-4 md:space-y-6 pb-10">
+    <div className="space-y-3 md:space-y-6">
       {(isImporting || isPreparingPDF) && (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-slate-900/60 backdrop-blur-md no-print">
-          <div className="bg-white dark:bg-slate-800 p-10 rounded-3xl shadow-2xl text-center max-w-sm">
-             <Loader2 className="mx-auto text-blue-600 animate-spin mb-4" size={56} />
-             <h3 className="text-xl font-black text-slate-900 dark:text-white tracking-tight uppercase">
-                {isPreparingPDF ? "Menyiapkan PDF..." : "Memproses..."}
-             </h3>
-             <p className="text-slate-500 dark:text-slate-400 text-[10px] font-bold mt-2 leading-relaxed uppercase">Mohon tunggu sejenak.</p>
+        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-slate-900/60 backdrop-blur-md">
+          <div className="bg-white dark:bg-slate-800 p-8 rounded-3xl text-center">
+             <Loader2 className="mx-auto text-blue-600 animate-spin mb-4" size={32} />
+             <p className="text-xs font-black uppercase text-slate-950 dark:text-white">{isPreparingPDF ? "Cetak PDF..." : "Memproses..."}</p>
           </div>
         </div>
       )}
 
-      {/* Main Action Bar */}
-      <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-3 md:gap-4 bg-white dark:bg-slate-900 p-3 md:p-4 rounded-2xl md:rounded-3xl shadow-sm border border-slate-200 dark:border-slate-800 no-print">
-        <div className="flex items-center bg-slate-100 dark:bg-slate-800 rounded-xl md:rounded-2xl px-4 py-2.5 md:py-3 border border-slate-200 dark:border-slate-700 w-full lg:max-w-xs focus-within:bg-white dark:focus-within:bg-slate-800 focus-within:ring-2 focus-within:ring-blue-500/10 transition-all shrink-0">
-          <Search size={16} className="text-slate-400 mr-2 md:mr-3 shrink-0" />
+      {/* Main Action Bar - Optimized for Mobile (Smaller Buttons) */}
+      <div className="flex flex-col gap-3 bg-white dark:bg-slate-900 p-3 rounded-2xl md:rounded-[2.5rem] shadow-sm border border-slate-200 dark:border-slate-800 no-print">
+        <div className="flex items-center bg-slate-100 dark:bg-slate-800 rounded-xl px-3 py-2 border border-slate-200 dark:border-slate-700 w-full focus-within:bg-white dark:focus-within:bg-slate-800 transition-all">
+          <Search size={16} className="text-slate-400 mr-2" />
           <input 
             type="text" 
             placeholder="Cari Nama/NIK/KK..."
-            className="bg-transparent border-none outline-none text-xs md:text-sm w-full font-bold dark:text-white"
+            className="bg-transparent border-none outline-none text-xs w-full font-bold text-slate-950 dark:text-white"
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
           />
         </div>
         
-        <div className="flex items-center flex-wrap gap-2 justify-center lg:justify-end">
-          <button 
-            onClick={handleDownloadPDF} 
-            className="flex items-center space-x-1.5 px-4 py-2.5 bg-red-600 text-white rounded-xl md:rounded-2xl text-[9px] font-black hover:bg-red-700 transition-all uppercase tracking-widest shadow-md"
-          >
-            <Download size={14} />
-            <span className="hidden sm:inline">Unduh PDF</span>
-            <span className="sm:hidden">PDF</span>
+        <div className="flex items-center overflow-x-auto gap-1.5 pb-0.5 scrollbar-hide">
+          <button onClick={() => setIsAddModalOpen(true)} className="flex items-center space-x-1.5 px-3 py-2 bg-slate-950 dark:bg-blue-600 text-white rounded-lg text-[8px] font-black uppercase whitespace-nowrap shadow-sm">
+            <Plus size={12} /> <span>Tambah KK</span>
           </button>
-
-          <button onClick={handleDownloadCSV} className="flex items-center space-x-1.5 px-4 py-2.5 bg-emerald-50 dark:bg-emerald-900/20 border border-emerald-200 dark:border-emerald-800 rounded-xl md:rounded-2xl text-[9px] font-black text-emerald-700 dark:text-emerald-400 hover:bg-emerald-100 transition-all uppercase tracking-widest">
-            <Download size={14} />
-            <span className="hidden sm:inline">Ekspor CSV</span>
-            <span className="sm:hidden">CSV</span>
+          <button onClick={handleDownloadPDF} className="flex items-center space-x-1.5 px-3 py-2 bg-rose-600 text-white rounded-lg text-[8px] font-black uppercase whitespace-nowrap">
+            <Printer size={12} /> <span>Cetak</span>
           </button>
-          
-          <button onClick={downloadTemplate} className="flex items-center space-x-1.5 px-3 py-2.5 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl md:rounded-2xl text-[9px] font-black text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700 transition-all uppercase tracking-widest">
-            <BookOpen size={14} />
-            <span className="hidden sm:inline">Format</span>
-            <span className="sm:hidden">FMT</span>
+          <button onClick={handleDownloadCSV} className="flex items-center space-x-1.5 px-3 py-2 bg-emerald-600 text-white rounded-lg text-[8px] font-black uppercase whitespace-nowrap">
+            <Download size={12} /> <span>CSV</span>
           </button>
-          
-          <label className="flex items-center space-x-1.5 px-3 py-2.5 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-xl md:rounded-2xl text-[9px] font-black text-blue-700 dark:text-blue-400 hover:bg-blue-100 transition-all cursor-pointer uppercase tracking-widest">
-            <Upload size={14} />
-            <span className="hidden sm:inline">Import</span>
-            <span className="sm:hidden">IMP</span>
+          <label className="flex items-center space-x-1.5 px-3 py-2 bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 border border-blue-200 dark:border-blue-800 rounded-lg text-[8px] font-black uppercase whitespace-nowrap cursor-pointer">
+            <Upload size={12} /> <span>Import</span>
             <input ref={fileInputRef} type="file" className="hidden" onChange={handleImport} accept=".csv" />
           </label>
-
-          <button onClick={() => setIsAddModalOpen(true)} className="flex items-center space-x-2 px-5 py-2.5 bg-slate-900 dark:bg-blue-600 text-white rounded-xl md:rounded-2xl text-[9px] font-black hover:bg-slate-800 dark:hover:bg-blue-500 transition-all shadow-md uppercase tracking-widest">
-            <Plus size={16} />
-            <span>Tambah KK</span>
-          </button>
         </div>
       </div>
 
-      {/* Advanced Filter Bar */}
-      <div className="flex items-center space-x-2 md:space-x-3 bg-white dark:bg-slate-900 p-2 md:p-3 rounded-xl md:rounded-[2rem] border border-slate-200 dark:border-slate-800 shadow-sm no-print overflow-x-auto whitespace-nowrap scrollbar-hide">
-        <div className="flex items-center bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg md:rounded-xl px-3 py-1.5 md:px-4 md:py-2 min-w-[120px]">
-           <MapPin size={12} className="text-slate-400 mr-2" />
-           <select className="bg-transparent text-[10px] md:text-xs font-black uppercase outline-none w-full dark:text-white" value={filters.dusun} onChange={(e) => setFilters({ ...filters, dusun: e.target.value, rw: '', rt: '' })}>
-             <option value="" className="dark:bg-slate-900">Dusun</option>
-             {dusunList.map(d => <option key={d} value={d} className="dark:bg-slate-900">{d}</option>)}
-           </select>
-        </div>
-        <div className="flex items-center bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg md:rounded-xl px-3 py-1.5 md:px-4 md:py-2 min-w-[80px]">
-           <span className="text-[9px] font-black text-slate-400 mr-1.5 uppercase">RW</span>
-           <select className="bg-transparent text-[10px] md:text-xs font-black outline-none w-full dark:text-white" value={filters.rw} onChange={(e) => setFilters({ ...filters, rw: e.target.value, rt: '' })} disabled={!filters.dusun}>
-             <option value="" className="dark:bg-slate-900">--</option>
-             {rwList.map(rw => <option key={rw} value={rw} className="dark:bg-slate-900">{rw}</option>)}
-           </select>
-        </div>
-        <div className="flex items-center bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg md:rounded-xl px-3 py-1.5 md:px-4 md:py-2 min-w-[80px]">
-           <span className="text-[9px] font-black text-slate-400 mr-1.5 uppercase">RT</span>
-           <select className="bg-transparent text-[10px] md:text-xs font-black outline-none w-full dark:text-white" value={filters.rt} onChange={(e) => setFilters({ ...filters, rt: e.target.value })} disabled={!filters.rw}>
-             <option value="" className="dark:bg-slate-900">--</option>
-             {rtList.map(rt => <option key={rt} value={rt} className="dark:bg-slate-900">{rt}</option>)}
-           </select>
-        </div>
-        <button onClick={() => setFilters({ dusun: '', rw: '', rt: '' })} className="p-2 text-slate-400 hover:text-slate-900 dark:hover:text-white transition-all shrink-0"><RefreshCcw size={14} /></button>
-        <div className="hidden sm:flex ml-auto items-center space-x-2 text-[9px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest pr-2">
-          <Info size={12} />
-          <span>{filteredData.length} KK</span>
+      {/* Advanced Filter Bar (Compact Mobile) */}
+      <div className="bg-white dark:bg-slate-900 p-2.5 rounded-2xl md:rounded-3xl border border-slate-200 dark:border-slate-800 shadow-sm overflow-x-auto scrollbar-hide">
+        <div className="flex items-center space-x-2 min-w-max">
+          <div className="flex items-center bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg px-2 py-1.5">
+            <MapPin size={10} className="text-slate-400 mr-1.5" />
+            <select className="bg-transparent text-[8px] font-black uppercase outline-none text-slate-950 dark:text-white" value={filters.dusun} onChange={(e) => setFilters({ ...filters, dusun: e.target.value, rw: '', rt: '' })}>
+              <option value="">Dusun</option>
+              {dusunList.map(d => <option key={d} value={d}>{d}</option>)}
+            </select>
+          </div>
+          <div className="flex items-center bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg px-2 py-1.5">
+            <span className="text-[7px] font-black text-slate-400 mr-1.5 uppercase">RW</span>
+            <select className="bg-transparent text-[8px] font-black outline-none text-slate-950 dark:text-white" value={filters.rw} onChange={(e) => setFilters({ ...filters, rw: e.target.value, rt: '' })} disabled={!filters.dusun}>
+              <option value="">-</option>
+              {rwList.map(rw => <option key={rw} value={rw}>{rw}</option>)}
+            </select>
+          </div>
+          <div className="flex items-center bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg px-2 py-1.5">
+            <span className="text-[7px] font-black text-slate-400 mr-1.5 uppercase">RT</span>
+            <select className="bg-transparent text-[8px] font-black outline-none text-slate-950 dark:text-white" value={filters.rt} onChange={(e) => setFilters({ ...filters, rt: e.target.value })} disabled={!filters.rw}>
+              <option value="">-</option>
+              {rtList.map(rt => <option key={rt} value={rt}>{rt}</option>)}
+            </select>
+          </div>
+          <button onClick={() => setFilters({ dusun: '', rw: '', rt: '' })} className="p-1.5 text-slate-400 hover:text-slate-900 transition-all"><RefreshCcw size={12} /></button>
+          <div className="text-[8px] font-black text-slate-500 uppercase bg-slate-100 dark:bg-slate-800 px-2 py-1.5 rounded-lg ml-auto">
+            {filteredData.length} KK
+          </div>
         </div>
       </div>
 
-      {/* Screen Table */}
-      <div className="bg-white dark:bg-slate-900 rounded-xl md:rounded-[2rem] shadow-sm border border-slate-200 dark:border-slate-800 overflow-hidden no-print">
+      {/* Ultra-Compact Card View (Mobile Only) */}
+      <div className="grid grid-cols-1 md:hidden gap-3 no-print">
+        {filteredData.length > 0 ? filteredData.map((r) => (
+          <div key={r.id} className="bg-white dark:bg-slate-900 p-4 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm relative overflow-hidden group">
+             {/* Left Marker */}
+             <div className="absolute top-0 left-0 w-1 h-full bg-blue-600"></div>
+             
+             <div className="flex justify-between items-start mb-3">
+                <div className="flex items-center space-x-2.5 min-w-0 flex-1">
+                   <div className="w-8 h-8 bg-slate-100 dark:bg-slate-800 rounded-lg flex items-center justify-center text-slate-400 shrink-0">
+                      <User size={16} />
+                   </div>
+                   <div className="min-w-0 flex-1">
+                      <button 
+                        onClick={() => setViewingFamilyKK(r.noKK)}
+                        className="text-[11px] font-black uppercase text-slate-950 dark:text-white leading-tight truncate text-left w-full hover:text-blue-600 transition-colors"
+                      >
+                        {r.fullName}
+                      </button>
+                      <button 
+                        onClick={() => setViewingFamilyKK(r.noKK)}
+                        className="text-[9px] font-mono font-bold text-blue-600 dark:text-blue-400 mt-0.5 truncate block"
+                      >
+                        KK: {r.noKK}
+                      </button>
+                   </div>
+                </div>
+                <div className="flex items-center space-x-1 shrink-0 ml-2">
+                   <button onClick={() => setViewingFamilyKK(r.noKK)} className="p-2 bg-blue-50 dark:bg-blue-900/30 text-blue-600 rounded-lg"><Eye size={14} /></button>
+                   <button onClick={() => setEditingResident(r)} className="p-2 bg-slate-50 dark:bg-slate-800 text-slate-600 dark:text-slate-400 rounded-lg"><Edit3 size={14} /></button>
+                </div>
+             </div>
+
+             <div className="grid grid-cols-2 gap-3 border-t border-slate-100 dark:border-slate-800 pt-2.5 mb-3">
+                <div className="min-w-0">
+                   <p className="text-[7px] font-black text-slate-400 uppercase mb-0.5 tracking-widest">Wilayah</p>
+                   <p className="text-[9px] font-bold text-slate-800 dark:text-slate-300 uppercase truncate leading-none">{r.dusun}</p>
+                   <p className="text-[8px] font-black text-slate-500 uppercase mt-0.5">RT {r.rt} / RW {r.rw}</p>
+                </div>
+                <div className="min-w-0">
+                   <p className="text-[7px] font-black text-slate-400 uppercase mb-0.5 tracking-widest">NIK Penduduk</p>
+                   <p className="text-[9px] font-mono font-bold text-slate-800 dark:text-slate-300 truncate leading-none">{r.nik}</p>
+                   <span className={`text-[7px] font-black uppercase px-1.5 py-0.5 rounded-md inline-block mt-1 ${r.gender.includes('Laki') ? 'bg-blue-100 text-blue-600' : 'bg-pink-100 text-pink-600'}`}>
+                      {r.gender.includes('Laki') ? 'LAKI-LAKI' : 'PEREMPUAN'}
+                   </span>
+                </div>
+             </div>
+
+             <div className="flex items-center gap-2">
+                <button onClick={() => setMovingFamily(r)} className="flex-1 py-2 bg-amber-50 dark:bg-amber-900/20 text-amber-600 dark:text-amber-400 rounded-xl text-[8px] font-black uppercase border border-amber-100 dark:border-amber-800 flex items-center justify-center space-x-1.5">
+                   <PlaneLanding size={10} /> <span>Pindah</span>
+                </button>
+                <button onClick={() => setDeletingFamily({ item: r })} className="flex-1 py-2 bg-rose-50 dark:bg-rose-900/20 text-rose-600 dark:text-rose-400 rounded-xl text-[8px] font-black uppercase border border-rose-100 dark:border-rose-800 flex items-center justify-center space-x-1.5">
+                   <Trash2 size={10} /> <span>Hapus</span>
+                </button>
+             </div>
+          </div>
+        )) : (
+          <div className="py-16 text-center bg-white dark:bg-slate-900 rounded-2xl border border-dashed border-slate-200 dark:border-slate-800">
+             <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Tidak ada data</p>
+          </div>
+        )}
+      </div>
+
+      {/* Desktop View (Table) */}
+      <div className="hidden md:block bg-white dark:bg-slate-900 rounded-[2rem] shadow-sm border border-slate-200 dark:border-slate-800 overflow-hidden no-print">
         <div className="overflow-x-auto">
           <table className="w-full text-left border-collapse min-w-[900px]">
-            <thead className="bg-slate-50 dark:bg-slate-800/50 border-b border-slate-200 dark:border-slate-800">
+            <thead className="bg-slate-50 dark:bg-slate-800 border-b border-slate-200 dark:border-slate-800 text-slate-500 dark:text-slate-400">
               <tr>
-                <th className="px-4 py-4 w-10 text-center">
-                  <button onClick={() => selectedIds.length === filteredData.length ? setSelectedIds([]) : setSelectedIds(filteredData.map(r => r.id))} className="text-slate-400">
-                    {selectedIds.length === filteredData.length && filteredData.length > 0 ? <CheckSquare size={18} className="text-blue-600" /> : <Square size={18} />}
-                  </button>
-                </th>
-                <th className="px-3 py-4 text-[9px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest text-center w-40">Aksi</th>
-                <th className="px-3 py-4 text-[9px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest">Alamat</th>
-                <th className="px-3 py-4 text-[9px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest">Identitas</th>
-                <th className="px-3 py-4 text-[9px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest">Kepala Keluarga</th>
-                <th className="px-3 py-4 text-[9px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest text-center">Profil</th>
-                <th className="px-3 py-4 text-[9px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest">Kerja</th>
+                <th className="px-4 py-4 w-10 text-center"><Square size={18} className="text-slate-300" /></th>
+                <th className="px-3 py-4 text-[9px] font-black uppercase tracking-widest text-center w-40">Aksi</th>
+                <th className="px-3 py-4 text-[9px] font-black uppercase tracking-widest">Alamat</th>
+                <th className="px-3 py-4 text-[9px] font-black uppercase tracking-widest">Identitas</th>
+                <th className="px-3 py-4 text-[9px] font-black uppercase tracking-widest">Kepala Keluarga</th>
+                <th className="px-3 py-4 text-[9px] font-black uppercase tracking-widest text-center">Profil</th>
+                <th className="px-3 py-4 text-[9px] font-black uppercase tracking-widest">Kerja</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
               {filteredData.map((r) => (
-                <tr key={r.id} className="hover:bg-blue-50/20 dark:hover:bg-blue-900/10 transition-all">
-                  <td className="px-4 py-5 text-center">
-                    <button onClick={() => setSelectedIds(prev => prev.includes(r.id) ? prev.filter(i => i !== r.id) : [...prev, r.id])} className="text-slate-200 dark:text-slate-700">
-                      {selectedIds.includes(r.id) ? <CheckSquare size={20} className="text-blue-600" /> : <Square size={20} />}
-                    </button>
-                  </td>
+                <tr key={r.id} className="hover:bg-blue-50/20 dark:hover:bg-blue-900/10 transition-all text-slate-950 dark:text-slate-100">
+                  <td className="px-4 py-5 text-center"><Square size={18} className="text-slate-200 dark:text-slate-700" /></td>
                   <td className="px-3 py-5">
                     <div className="flex items-center justify-center space-x-1">
-                      <button onClick={() => setViewingFamilyKK(r.noKK)} className="p-2 bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 rounded-lg hover:bg-blue-600 hover:text-white transition-all shadow-sm" title="Anggota"><Eye size={14} /></button>
-                      <button onClick={() => setEditingResident(r)} className="p-2 bg-slate-50 dark:bg-slate-800 text-slate-600 dark:text-slate-400 rounded-lg hover:bg-slate-900 dark:hover:bg-blue-600 hover:text-white transition-all shadow-sm" title="Edit"><Edit3 size={14} /></button>
-                      <button onClick={() => setMovingFamily(r)} className="p-2 bg-amber-50 dark:bg-amber-900/30 text-amber-600 dark:text-amber-400 rounded-lg hover:bg-amber-600 hover:text-white transition-all shadow-sm" title="Pindah"><PlaneLanding size={14} /></button>
-                      <button onClick={() => setDeletingFamily({ item: r })} className="p-2 bg-rose-50 dark:bg-rose-900/30 text-rose-600 dark:text-rose-400 rounded-lg hover:bg-rose-600 hover:text-white transition-all shadow-sm" title="Hapus"><Trash2 size={14} /></button>
+                      <button onClick={() => setViewingFamilyKK(r.noKK)} className="p-2 bg-blue-50 dark:bg-blue-900/30 text-blue-600 rounded-lg hover:bg-blue-600 hover:text-white transition-all"><Eye size={14} /></button>
+                      <button onClick={() => setEditingResident(r)} className="p-2 bg-slate-50 dark:bg-slate-800 text-slate-600 rounded-lg hover:bg-slate-800 dark:hover:bg-slate-600 hover:text-white transition-all"><Edit3 size={14} /></button>
+                      <button onClick={() => setMovingFamily(r)} className="p-2 bg-amber-50 dark:bg-amber-900/30 text-amber-600 rounded-lg hover:bg-amber-600 hover:text-white transition-all"><PlaneLanding size={14} /></button>
+                      <button onClick={() => setDeletingFamily({ item: r })} className="p-2 bg-rose-50 dark:bg-rose-900/30 text-rose-600 rounded-lg hover:bg-rose-600 hover:text-white transition-all"><Trash2 size={14} /></button>
                     </div>
                   </td>
                   <td className="px-3 py-5">
-                    <div className="text-[11px] font-black text-slate-800 dark:text-slate-200">{r.dusun}</div>
-                    <div className="text-[9px] text-slate-400 font-bold">RT {r.rt} / RW {r.rw}</div>
+                    <div className="text-[11px] font-black">{r.dusun}</div>
+                    <div className="text-[9px] text-slate-500 font-bold">RT {r.rt} / RW {r.rw}</div>
                   </td>
                   <td className="px-3 py-5">
-                    <div className="text-[11px] font-black text-blue-600 dark:text-blue-400 truncate max-w-[100px] cursor-pointer" onClick={() => setViewingFamilyKK(r.noKK)}>{r.noKK}</div>
-                    <div className="text-[9px] text-slate-400 font-mono">{r.nik}</div>
+                    <button 
+                      onClick={() => setViewingFamilyKK(r.noKK)}
+                      className="text-[11px] font-black text-blue-600 dark:text-blue-400 hover:underline block text-left"
+                    >
+                      {r.noKK}
+                    </button>
+                    <div className="text-[9px] text-slate-500 dark:text-slate-500 font-mono font-bold">{r.nik}</div>
                   </td>
-                  <td className="px-3 py-5 text-[11px] font-black text-slate-800 dark:text-slate-200 uppercase max-w-[150px] truncate">{r.fullName}</td>
+                  <td className="px-3 py-5">
+                    <button 
+                      onClick={() => setViewingFamilyKK(r.noKK)}
+                      className="text-[11px] font-black uppercase text-left hover:text-blue-600 transition-colors"
+                    >
+                      {r.fullName}
+                    </button>
+                  </td>
                   <td className="px-3 py-5 text-center">
-                    <div className="text-[11px] font-black text-slate-900 dark:text-white">{calculateAge(r.birthDate)} <span className="text-[9px] font-normal text-slate-400">Thn</span></div>
-                    <div className={`text-[8px] uppercase font-black px-1.5 py-0.5 rounded-full inline-block mt-0.5 ${r.gender.includes('Perempuan') ? 'bg-pink-100 dark:bg-pink-900/40 text-pink-700 dark:text-pink-300' : 'bg-blue-100 dark:bg-blue-900/40 text-blue-700 dark:text-blue-300'}`}>
-                      {r.gender.includes('Laki') ? 'L' : 'P'}
-                    </div>
+                    <div className="text-[11px] font-black">{calculateAge(r.birthDate)} <span className="text-[8px] text-slate-400 font-bold">THN</span></div>
                   </td>
-                  <td className="px-3 py-5 text-[10px] text-slate-500 dark:text-slate-400 font-medium truncate max-w-[120px]">{r.job || '-'}</td>
+                  <td className="px-3 py-5 text-[10px] text-slate-600 dark:text-slate-400 font-bold truncate max-w-[120px]">
+                    {r.job || '-'}
+                  </td>
                 </tr>
               ))}
-              {filteredData.length === 0 && (
-                <tr>
-                  <td colSpan={7} className="px-6 py-20 text-center text-slate-400 dark:text-slate-600 font-black uppercase text-[10px] tracking-widest">Data tidak ditemukan.</td>
-                </tr>
-              )}
             </tbody>
           </table>
         </div>
@@ -423,23 +412,19 @@ const PopulationManagement: React.FC<PopulationManagementProps> = ({ residents, 
 
       {deletingFamily && (
         <div className="fixed inset-0 z-[120] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-md animate-in fade-in">
-          <div className="bg-white dark:bg-slate-900 rounded-2xl md:rounded-[2.5rem] shadow-2xl w-full max-w-sm overflow-hidden border border-slate-200 dark:border-slate-800 animate-in zoom-in-95">
-            <div className="p-5 bg-slate-950 text-white flex justify-between items-center uppercase font-black tracking-widest text-[10px] md:text-xs">
+          <div className="bg-white dark:bg-slate-900 rounded-[2.5rem] shadow-2xl w-full max-w-sm overflow-hidden border border-slate-200 dark:border-slate-800 animate-in zoom-in-95">
+            <div className="p-5 bg-slate-950 text-white flex justify-between items-center uppercase font-black text-[10px]">
                <span>Konfirmasi Hapus</span>
                <button onClick={() => setDeletingFamily(null)}><X size={20}/></button>
             </div>
-            <div className="p-6 md:p-8 space-y-4">
-               <div className="text-center bg-rose-50 dark:bg-rose-900/20 p-4 rounded-xl border border-rose-100 dark:border-rose-900/30">
-                 <p className="text-[9px] font-black text-rose-600 dark:text-rose-400 uppercase mb-1.5 tracking-widest">Data Akan Dipindahkan ke Arsip</p>
-                 <h5 className="text-sm md:text-base font-black text-slate-900 dark:text-white uppercase leading-tight">{deletingFamily.item.fullName}</h5>
+            <div className="p-8 space-y-4">
+               <div className="text-center bg-rose-50 dark:bg-rose-900/20 p-4 rounded-xl border border-rose-100 dark:border-rose-900/40">
+                 <h5 className="text-sm font-black uppercase text-slate-950 dark:text-white leading-tight">{deletingFamily.item.fullName}</h5>
                </div>
-               <div className="space-y-2.5">
-                 <button onClick={() => {
-                    setResidents(prev => prev.map(r => r.noKK === deletingFamily.item.noKK ? {...r, status: 'Terhapus' as ResidentStatus, deleteDate: new Date().toISOString().split('T')[0], deleteReason: 'Hapus via Mobile'} : r));
-                    setDeletingFamily(null);
-                 }} className="w-full py-3.5 bg-rose-600 text-white rounded-xl font-black text-xs uppercase shadow-lg hover:bg-rose-700 transition-all">Konfirmasi Hapus</button>
-                 <button onClick={() => setDeletingFamily(null)} className="w-full py-3 text-center text-[10px] font-black text-slate-400 uppercase tracking-widest">Batal</button>
-               </div>
+               <button onClick={() => {
+                  setResidents(prev => prev.map(r => r.noKK === deletingFamily.item.noKK ? {...r, status: 'Terhapus' as ResidentStatus, deleteDate: new Date().toISOString().split('T')[0], deleteReason: 'Mobile'} : r));
+                  setDeletingFamily(null);
+               }} className="w-full py-4 bg-rose-600 text-white rounded-2xl font-black text-xs uppercase shadow-xl hover:bg-rose-700">Konfirmasi Hapus</button>
             </div>
           </div>
         </div>
@@ -453,33 +438,23 @@ const MoveFamilyModal: React.FC<{ item: Resident, onClose: () => void, onConfirm
   const [date, setDate] = useState(new Date().toISOString().split('T')[0]);
   return (
     <div className="fixed inset-0 z-[120] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-md animate-in fade-in">
-      <div className="bg-white dark:bg-slate-900 rounded-2xl md:rounded-[2.5rem] shadow-2xl w-full max-w-sm overflow-hidden border border-slate-200 dark:border-slate-800 animate-in zoom-in-95">
-        <div className="p-5 bg-amber-500 text-white flex justify-between items-center uppercase font-black tracking-widest text-[10px] md:text-xs">
-           <div className="flex items-center space-x-2">
-             <PlaneLanding size={16} />
-             <span>Lapor Pindah</span>
-           </div>
+      <div className="bg-white dark:bg-slate-900 rounded-[2.5rem] shadow-2xl w-full max-w-sm overflow-hidden border border-slate-200 dark:border-slate-800 animate-in zoom-in-95">
+        <div className="p-5 bg-amber-500 text-white flex justify-between items-center uppercase font-black text-[10px]">
+           <span>Lapor Pindah</span>
            <button onClick={onClose}><X size={20}/></button>
         </div>
-        <div className="p-6 md:p-8 space-y-5">
-           <div className="text-center bg-amber-50 dark:bg-amber-900/20 p-4 rounded-xl border border-amber-100 dark:border-amber-900/30">
-             <h5 className="text-sm md:text-base font-black text-slate-900 dark:text-white uppercase leading-tight">{item.fullName}</h5>
-             <p className="text-[9px] text-slate-400 dark:text-slate-500 font-mono mt-1 uppercase tracking-tighter">KK: {item.noKK}</p>
-           </div>
+        <div className="p-8 space-y-5">
            <div className="space-y-4">
               <div>
                 <label className="text-[9px] font-black text-slate-400 uppercase tracking-widest block mb-1.5">Tujuan Pindah</label>
-                <input type="text" value={dest} onChange={e => setDest(e.target.value)} className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 dark:text-white rounded-xl px-4 py-3 font-bold text-xs outline-none focus:bg-white dark:focus:bg-slate-800 transition-all uppercase" placeholder="Nama Kota/Kec/Desa" required />
+                <input type="text" value={dest} onChange={e => setDest(e.target.value)} className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-4 py-3 font-bold text-xs uppercase text-slate-950 dark:text-white outline-none focus:ring-2 focus:ring-amber-500/20" placeholder="Contoh: Jakarta" required />
               </div>
               <div>
                 <label className="text-[9px] font-black text-slate-400 uppercase tracking-widest block mb-1.5">Tanggal</label>
-                <input type="date" value={date} onChange={e => setDate(e.target.value)} className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 dark:text-white rounded-xl px-4 py-3 font-bold text-xs outline-none focus:bg-white dark:focus:bg-slate-800 transition-all" required />
+                <input type="date" value={date} onChange={e => setDate(e.target.value)} className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-4 py-3 font-bold text-xs text-slate-950 dark:text-white outline-none focus:ring-2 focus:ring-amber-500/20" required />
               </div>
            </div>
-           <div className="space-y-2.5">
-              <button onClick={() => dest.trim() ? onConfirm(dest, date) : alert("Isi tujuan!")} className="w-full py-3.5 bg-amber-500 text-white rounded-xl font-black text-xs uppercase shadow-lg hover:bg-amber-600 transition-all">Konfirmasi Pindah</button>
-              <button onClick={onClose} className="w-full py-3 text-center text-[10px] font-black text-slate-400 uppercase tracking-widest">Kembali</button>
-           </div>
+           <button onClick={() => dest.trim() ? onConfirm(dest, date) : alert("Isi tujuan!")} className="w-full py-4 bg-amber-500 text-white rounded-2xl font-black text-xs uppercase shadow-xl hover:bg-amber-600 transition-all">Konfirmasi Pindah</button>
         </div>
       </div>
     </div>

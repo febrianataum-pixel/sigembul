@@ -93,20 +93,21 @@ const Dashboard: React.FC<DashboardProps> = ({ residents }) => {
   }, [residents]);
 
   const StatCard = ({ icon: Icon, label, value, colorClass }: any) => (
-    <div className="bg-white dark:bg-slate-900 p-4 md:p-6 rounded-3xl border border-slate-200 dark:border-slate-800 flex items-center space-x-4 shadow-sm transition-all">
+    <div className="bg-white dark:bg-slate-900 p-4 md:p-6 rounded-[2rem] border border-slate-200 dark:border-slate-800 flex items-center space-x-3 md:space-x-4 shadow-sm transition-all">
       <div className={`p-3 md:p-4 rounded-2xl ${colorClass} shrink-0`}>
-        <Icon size={24} className="text-white" />
+        <Icon size={20} className="text-white md:w-6 md:h-6" />
       </div>
       <div className="min-w-0">
-        <p className="text-[9px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest mb-1">{label}</p>
-        <p className="text-xl md:text-2xl font-black text-slate-900 dark:text-white leading-none">{value}</p>
+        <p className="text-[8px] md:text-[9px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest mb-0.5 md:mb-1">{label}</p>
+        <p className="text-lg md:text-2xl font-black text-slate-900 dark:text-white leading-none">{value}</p>
       </div>
     </div>
   );
 
   return (
-    <div className="space-y-6 md:space-y-8 animate-in fade-in duration-500">
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6">
+    <div className="space-y-6 md:space-y-8 animate-in fade-in duration-500 pb-6">
+      {/* Grid Statistik - Mobile 2x2, Tablet/Desktop 4x1 */}
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 md:gap-6">
         <StatCard icon={Users} label="Penduduk" value={totalResidents} colorClass="bg-blue-600" />
         <StatCard icon={Home} label="Kepala KK" value={totalKK} colorClass="bg-slate-900 dark:bg-slate-800" />
         <StatCard icon={Layers} label="Unit RT" value={totalRT} colorClass="bg-emerald-600" />
@@ -115,22 +116,22 @@ const Dashboard: React.FC<DashboardProps> = ({ residents }) => {
 
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 md:gap-8">
         <div className="lg:col-span-8 bg-white dark:bg-slate-900 p-6 md:p-10 rounded-[2.5rem] border border-slate-200 dark:border-slate-800 shadow-sm relative">
-          <div className="flex items-center justify-between mb-8">
+          <div className="flex flex-col md:flex-row md:items-center justify-between mb-8 gap-4">
              <div className="flex items-center space-x-3">
                <TrendingUp size={20} className="text-blue-600" />
                <h3 className="text-sm md:text-base font-black text-slate-900 dark:text-white uppercase tracking-widest">Piramida Penduduk</h3>
              </div>
-             <div className="flex items-center space-x-3 text-[10px] font-bold uppercase text-slate-500">
-                <div className="flex items-center"><div className="w-2.5 h-2.5 bg-pink-500 rounded-full mr-1.5"></div> Wanita</div>
-                <div className="flex items-center"><div className="w-2.5 h-2.5 bg-blue-600 rounded-full mr-1.5"></div> Pria</div>
+             <div className="flex items-center space-x-4 text-[9px] font-black uppercase text-slate-500">
+                <div className="flex items-center"><div className="w-2.5 h-2.5 bg-pink-500 rounded-full mr-2"></div> Wanita</div>
+                <div className="flex items-center"><div className="w-2.5 h-2.5 bg-blue-600 rounded-full mr-2"></div> Pria</div>
              </div>
           </div>
-          <div className="h-[400px] md:h-[500px]">
+          <div className="h-[350px] md:h-[500px]">
             <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={pyramidData} layout="vertical" stackOffset="sign" margin={{ left: 10, right: 30 }}>
+              <BarChart data={pyramidData} layout="vertical" stackOffset="sign" margin={{ left: -10, right: 10 }}>
                 <CartesianGrid strokeDasharray="3 3" horizontal={true} vertical={false} stroke="#334155" opacity={0.1} />
                 <XAxis type="number" hide />
-                <YAxis dataKey="label" type="category" width={100} axisLine={false} tickLine={false} tick={{ fontSize: 10, fontWeight: 800, fill: '#64748b' }} />
+                <YAxis dataKey="label" type="category" width={80} axisLine={false} tickLine={false} tick={{ fontSize: 9, fontWeight: 900, fill: '#64748b' }} />
                 <Tooltip cursor={{ fill: 'transparent' }} content={({ active, payload }) => {
                   if (active && payload?.length) {
                     const data = payload[0].payload;
@@ -144,8 +145,8 @@ const Dashboard: React.FC<DashboardProps> = ({ residents }) => {
                   }
                   return null;
                 }} />
-                <Bar dataKey="females" fill="#db2777" radius={[5, 0, 0, 5]} barSize={20} className="cursor-pointer" onClick={(data) => handlePyramidClick(data, 'Perempuan')} />
-                <Bar dataKey="males" fill="#1e40af" radius={[0, 5, 5, 0]} barSize={20} className="cursor-pointer" onClick={(data) => handlePyramidClick(data, 'Laki')} />
+                <Bar dataKey="females" fill="#db2777" radius={[5, 0, 0, 5]} barSize={18} className="cursor-pointer" onClick={(data) => handlePyramidClick(data, 'Perempuan')} />
+                <Bar dataKey="males" fill="#1e40af" radius={[0, 5, 5, 0]} barSize={18} className="cursor-pointer" onClick={(data) => handlePyramidClick(data, 'Laki')} />
               </BarChart>
             </ResponsiveContainer>
           </div>
@@ -159,8 +160,8 @@ const Dashboard: React.FC<DashboardProps> = ({ residents }) => {
               {dusunChartData.map((d) => (
                  <div key={d.name} className="p-4 bg-slate-50 dark:bg-slate-800/50 border border-slate-100 dark:border-slate-700 rounded-2xl group transition-all">
                     <div className="flex justify-between items-center mb-2">
-                       <span className="text-xs font-black text-slate-700 dark:text-slate-300 uppercase">{d.name}</span>
-                       <span className="text-sm font-black text-slate-900 dark:text-white">{d.count} <span className="text-[10px] text-slate-400 font-normal">Jiwa</span></span>
+                       <span className="text-[10px] font-black text-slate-700 dark:text-slate-300 uppercase tracking-tighter">{d.name}</span>
+                       <span className="text-xs font-black text-slate-900 dark:text-white">{d.count} <span className="text-[9px] text-slate-400 font-normal">Jiwa</span></span>
                     </div>
                     <div className="w-full bg-slate-200 dark:bg-slate-700 h-1.5 rounded-full overflow-hidden">
                        <div className="bg-emerald-500 h-full rounded-full transition-all duration-1000" style={{ width: `${(d.count / (totalResidents || 1)) * 100}%` }}></div>
