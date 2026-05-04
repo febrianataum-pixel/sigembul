@@ -1,0 +1,31 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Default deny
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    // Helper functions
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isValidResident(data) {
+      return data.keys().hasAll(['id', 'fullName', 'nik', 'kkNumber']) &&
+             data.id is string && data.id.size() <= 128 &&
+             data.fullName is string && data.fullName.size() <= 256 &&
+             data.nik is string && data.nik.size() == 16;
+    }
+
+    match /residents_db/{residentId} {
+      // Allow read/list if signed in ( 마을 operator )
+      allow read, list: if isSignedIn();
+      
+      // Allow create/update/delete if signed in
+      allow create: if isSignedIn() && isValidResident(request.resource.data);
+      allow update: if isSignedIn() && isValidResident(request.resource.data);
+      allow delete: if isSignedIn();
+    }
+  }
+}

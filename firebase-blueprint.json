@@ -1,0 +1,32 @@
+{
+  "entities": {
+    "Resident": {
+      "title": "Resident",
+      "description": "Data kependudukan penduduk desa.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "fullName": { "type": "string" },
+        "nik": { "type": "string" },
+        "kkNumber": { "type": "string" },
+        "birthDate": { "type": "string" },
+        "birthPlace": { "type": "string" },
+        "gender": { "type": "string", "enum": ["L", "P"] },
+        "address": { "type": "string" },
+        "rt": { "type": "string" },
+        "rw": { "type": "string" },
+        "dusun": { "type": "string" },
+        "status": { "type": "string" },
+        "isHeadOfFamily": { "type": "boolean" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["id", "fullName", "nik", "kkNumber"]
+    }
+  },
+  "firestore": {
+    "residents_db": {
+      "schema": "Resident",
+      "description": "Koleksi data penduduk desa."
+    }
+  }
+}

@@ -1,5 +1,6 @@
 {
-  "name": "SIGA Ngumbul",
-  "description": "Sistem Informasi & Data Kependudukan Desa Ngumbul, Kecamatan Todanan, Kabupaten Blora. Fokus pada manajemen data kepala keluarga, rekapitulasi indikator, dan visualisasi dashboard kependudukan.",
-  "requestFramePermissions": []
+  "name": "GEMBUL (Gerbang Data Ngumbul)",
+  "description": "Gerbang Data Ngumbul - Sistem Informasi & Data Kependudukan Desa Ngumbul, Kecamatan Todanan, Kabupaten Blora. Fokus pada manajemen data kepala keluarga, rekapitulasi indikator, dan visualisasi dashboard kependudukan.",
+  "requestFramePermissions": [],
+  "majorCapabilities": []
 }

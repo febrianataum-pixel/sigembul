@@ -18,7 +18,8 @@ import {
   CloudOff,
   RefreshCcw,
   Sun,
-  Moon
+  Moon,
+  LogOut
 } from 'lucide-react';
 import { AppConfig, AppTheme } from '../types';
 
@@ -29,9 +30,11 @@ interface LayoutProps {
   config: AppConfig;
   setConfig: React.Dispatch<React.SetStateAction<AppConfig>>;
   isSyncing?: boolean;
+  onLogout?: () => void;
+  user?: any;
 }
 
-const Layout: React.FC<LayoutProps> = ({ children, activeTab, setActiveTab, config, setConfig, isSyncing }) => {
+const Layout: React.FC<LayoutProps> = ({ children, activeTab, setActiveTab, config, setConfig, isSyncing, onLogout, user }) => {
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
 
   const theme = config.theme || 'light';
@@ -147,12 +150,22 @@ const Layout: React.FC<LayoutProps> = ({ children, activeTab, setActiveTab, conf
 
                <div className="flex items-center space-x-2 bg-slate-100 dark:bg-slate-800 pl-1 pr-2.5 py-1 rounded-full">
                   <div className="w-6 h-6 rounded-full bg-slate-900 dark:bg-blue-600 flex items-center justify-center text-white text-[8px] font-black uppercase">
-                    {getInitials(config.operatorName)}
+                    {getInitials(user?.email || config.operatorName)}
                   </div>
-                  <span className="hidden lg:inline text-[9px] font-black text-slate-950 dark:text-slate-300 uppercase truncate max-w-[80px]">
-                    {config.operatorName}
+                  <span className="hidden lg:inline text-[9px] font-black text-slate-950 dark:text-slate-300 uppercase truncate max-w-[120px]">
+                    {user?.email || config.operatorName}
                   </span>
                </div>
+
+               {onLogout && (
+                 <button 
+                   onClick={onLogout}
+                   className="p-2 rounded-xl bg-rose-50 dark:bg-rose-900/20 text-rose-600 dark:text-rose-400 hover:bg-rose-100 transition-all ml-1"
+                   title="Logout"
+                 >
+                   <LogOut size={15} />
+                 </button>
+               )}
             </div>
           </header>
 
