@@ -4,19 +4,19 @@ import { getFirestore, Firestore } from 'firebase/firestore';
 import { getAuth, Auth } from 'firebase/auth';
 
 const firebaseConfig = {
-  apiKey: import.meta.env.VITE_FIREBASE_API_KEY,
-  authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN,
-  projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID,
-  storageBucket: import.meta.env.VITE_FIREBASE_STORAGE_BUCKET,
-  messagingSenderId: import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID,
-  appId: import.meta.env.VITE_FIREBASE_APP_ID,
+  apiKey: import.meta.env.VITE_FIREBASE_API_KEY || "AIzaSyDxB7rZ8g6WtPykr5TF8FL3lY0UBUmGKjQ",
+  authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN || "gembul-d9cd3.firebaseapp.com",
+  projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID || "gembul-d9cd3",
+  storageBucket: import.meta.env.VITE_FIREBASE_STORAGE_BUCKET || "gembul-d9cd3.firebasestorage.app",
+  messagingSenderId: import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID || "943366605451",
+  appId: import.meta.env.VITE_FIREBASE_APP_ID || "1:943366605451:web:47bbcba8bb1c6fde51228e",
 };
 
 let appInstance: FirebaseApp | null = null;
 let dbInstance: Firestore | null = null;
 let authInstance: Auth | null = null;
 
-export const isFirebaseConfigured = !!firebaseConfig.apiKey && !!firebaseConfig.projectId;
+export const isFirebaseConfigured = true; // Set to true as we now have defaults
 
 export function getFirebaseApp(): FirebaseApp {
   if (!isFirebaseConfigured) {
